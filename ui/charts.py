@@ -7,14 +7,18 @@ import plotly.graph_objects as go
 REQUIRED_COLUMNS = ["Open", "High", "Low", "Close"]
 
 
-def create_candlestick_chart(prices: pd.DataFrame) -> go.Figure:
+def create_candlestick_chart(
+    prices: pd.DataFrame,
+    title: str = "Chart A",
+) -> go.Figure:
     """会社名を伏せたローソク足チャートを生成する。
 
     Args:
         prices: 日付インデックスとOpen、High、Low、Close列を持つデータ。
+        title: チャートに表示するタイトル。
 
     Returns:
-        タイトルが「Chart A」のPlotly Figure。
+        指定されたタイトルを持つPlotly Figure。
 
     Raises:
         ValueError: 必要な価格列が存在しない、またはデータが空の場合。
@@ -38,5 +42,5 @@ def create_candlestick_chart(prices: pd.DataFrame) -> go.Figure:
             )
         ]
     )
-    figure.update_layout(title="Chart A", xaxis_rangeslider_visible=False)
+    figure.update_layout(title=title, xaxis_rangeslider_visible=False)
     return figure
