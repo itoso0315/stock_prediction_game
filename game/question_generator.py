@@ -26,6 +26,7 @@ class ChartQuestion:
     base_close: float
     future_close: float
     future_return_percent: float
+    future_data: pd.DataFrame
 
 
 @dataclass(frozen=True)
@@ -196,6 +197,7 @@ def generate_game_question(
     display_end_index = start_index + DISPLAY_TRADING_DAYS - 1
     evaluation_index = display_end_index + FORECAST_TRADING_DAYS
     display_dates = common_dates[start_index : display_end_index + 1]
+    future_dates = common_dates[display_end_index + 1 : evaluation_index + 1]
     base_date = pd.Timestamp(common_dates[display_end_index])
     evaluation_date = pd.Timestamp(common_dates[evaluation_index])
 
@@ -210,6 +212,8 @@ def generate_game_question(
         future_close = _validated_close(prices.at[evaluation_date, "Close"])
         display_data = prices.loc[display_dates].copy(deep=True)
         display_data.index = display_dates.copy()
+        future_data = prices.loc[future_dates].copy(deep=True)
+        future_data.index = future_dates.copy()
         charts.append(
             ChartQuestion(
                 label=label,
@@ -223,6 +227,7 @@ def generate_game_question(
                     base_close,
                     future_close,
                 ),
+                future_data=future_data,
             )
         )
 

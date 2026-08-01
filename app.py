@@ -10,6 +10,7 @@ from ui.charts import create_candlestick_chart
 
 CHART_TITLES = ("Chart A", "Chart B", "Chart C")
 ERROR_MESSAGE = "問題データを生成できませんでした。時間をおいて再度お試しください。"
+RESULT_ERROR_MESSAGE = "結果を表示できませんでした。時間をおいて再度お試しください。"
 
 
 def initialize_session_state() -> None:
@@ -28,6 +29,14 @@ def select_answer(label: str) -> None:
         st.session_state.answer_choice = label
 
 
+def format_return_percent(value: float) -> str:
+    """騰落率を符号付き小数第2位の表示文字列へ変換する。"""
+    rounded = round(value, 2)
+    if rounded == 0:
+        return "0.00%"
+    return f"{rounded:+.2f}%"
+
+
 def main() -> None:
     """3銘柄のチャートと回答UIを表示する。"""
     st.title("Stock Trainer")
@@ -44,6 +53,53 @@ def main() -> None:
             st.session_state.game_question = question
 
         question = st.session_state.game_question
+    except Exception:
+        st.error(ERROR_MESSAGE)
+        return
+
+    if st.session_state.submitted:
+        try:
+            figures = tuple(
+                create_candlestick_chart(
+                    chart.display_data,
+                    title=chart.label,
+                )
+                for chart in question.charts
+            )
+            future_figures = tuple(
+                create_candlestick_chart(
+                    chart.future_data,
+                    title=f"{chart.label} - Result",
+                )
+                for chart in question.charts
+            )
+        except Exception:
+            st.error(RESULT_ERROR_MESSAGE)
+            return
+
+        for chart, figure in zip(question.charts, figures, strict=True):
+            st.plotly_chart(figure, use_container_width=True)
+            st.button(
+                f"{chart.label}を選ぶ",
+                key=f"select_{chart.label.lower().replace(' ', '_')}",
+                disabled=True,
+                on_click=select_answer,
+                args=(chart.label,),
+            )
+
+        is_correct = st.session_state.selected_label == question.correct_label
+        st.write(f"あなたの回答：{st.session_state.selected_label}")
+        st.write(f"正解：{question.correct_label}")
+        st.write("正解！" if is_correct else "不正解")
+
+        for chart, figure in zip(question.charts, future_figures, strict=True):
+            st.write(
+                f"{chart.label}：{format_return_percent(chart.future_return_percent)}"
+            )
+            st.plotly_chart(figure, use_container_width=True)
+        return
+
+    try:
         figures = tuple(
             create_candlestick_chart(
                 chart.display_data,
@@ -51,22 +107,19 @@ def main() -> None:
             )
             for chart in question.charts
         )
-        for chart, figure in zip(question.charts, figures, strict=True):
-            st.plotly_chart(figure, use_container_width=True)
-            st.button(
-                f"{chart.label}を選ぶ",
-                key=f"select_{chart.label.lower().replace(' ', '_')}",
-                disabled=st.session_state.submitted,
-                on_click=select_answer,
-                args=(chart.label,),
-            )
     except Exception:
         st.error(ERROR_MESSAGE)
         return
 
-    if st.session_state.submitted:
-        st.write(f"回答：{st.session_state.selected_label}")
-        return
+    for chart, figure in zip(question.charts, figures, strict=True):
+        st.plotly_chart(figure, use_container_width=True)
+        st.button(
+            f"{chart.label}を選ぶ",
+            key=f"select_{chart.label.lower().replace(' ', '_')}",
+            disabled=False,
+            on_click=select_answer,
+            args=(chart.label,),
+        )
 
     if st.session_state.answer_choice is not None:
         st.write(f"選択中：{st.session_state.answer_choice}")
