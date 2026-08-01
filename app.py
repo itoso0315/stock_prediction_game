@@ -21,6 +21,32 @@ def initialize_session_state() -> None:
         st.session_state.selected_label = None
     if "submitted" not in st.session_state:
         st.session_state.submitted = False
+    if "current_view" not in st.session_state:
+        st.session_state.current_view = (
+            "result" if st.session_state.submitted else "question"
+        )
+
+
+def normalize_session_state() -> None:
+    """回答状態の矛盾を補正し、表示画面を有効な値へ統一する。"""
+    if not st.session_state.submitted:
+        st.session_state.selected_label = None
+        st.session_state.current_view = "question"
+        return
+
+    if st.session_state.selected_label is None:
+        st.session_state.update(
+            {
+                "answer_choice": None,
+                "selected_label": None,
+                "submitted": False,
+                "current_view": "question",
+            }
+        )
+        return
+
+    st.session_state.answer_choice = st.session_state.selected_label
+    st.session_state.current_view = "result"
 
 
 def select_answer(label: str) -> None:
@@ -41,6 +67,7 @@ def main() -> None:
     """3銘柄のチャートと回答UIを表示する。"""
     st.title("Stock Trainer")
     initialize_session_state()
+    normalize_session_state()
 
     try:
         if "game_question" not in st.session_state:
@@ -57,15 +84,8 @@ def main() -> None:
         st.error(ERROR_MESSAGE)
         return
 
-    if st.session_state.submitted:
+    if st.session_state.current_view == "result":
         try:
-            figures = tuple(
-                create_candlestick_chart(
-                    chart.display_data,
-                    title=chart.label,
-                )
-                for chart in question.charts
-            )
             future_figures = tuple(
                 create_candlestick_chart(
                     chart.future_data,
@@ -77,16 +97,7 @@ def main() -> None:
             st.error(RESULT_ERROR_MESSAGE)
             return
 
-        for chart, figure in zip(question.charts, figures, strict=True):
-            st.plotly_chart(figure, use_container_width=True)
-            st.button(
-                f"{chart.label}を選ぶ",
-                key=f"select_{chart.label.lower().replace(' ', '_')}",
-                disabled=True,
-                on_click=select_answer,
-                args=(chart.label,),
-            )
-
+        st.header("結果発表")
         is_correct = st.session_state.selected_label == question.correct_label
         st.write(f"あなたの回答：{st.session_state.selected_label}")
         st.write(f"正解：{question.correct_label}")
@@ -125,6 +136,7 @@ def main() -> None:
                         "answer_choice": None,
                         "selected_label": None,
                         "submitted": False,
+                        "current_view": "question",
                     }
                 )
                 st.rerun()
@@ -159,8 +171,13 @@ def main() -> None:
         if st.session_state.answer_choice is None:
             st.warning("1つ選択してください。")
         else:
-            st.session_state.selected_label = st.session_state.answer_choice
-            st.session_state.submitted = True
+            st.session_state.update(
+                {
+                    "selected_label": st.session_state.answer_choice,
+                    "submitted": True,
+                    "current_view": "result",
+                }
+            )
             st.rerun()
 
 
