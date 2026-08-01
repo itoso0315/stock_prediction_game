@@ -9,6 +9,8 @@ from ui.charts import create_candlestick_chart, create_review_chart
 
 
 CHART_TITLES = ("Chart A", "Chart B", "Chart C")
+CHART_CARD_KEYS = ("chart_card_a", "chart_card_b", "chart_card_c")
+CHART_BUTTON_KEYS = ("select_chart_a", "select_chart_b", "select_chart_c")
 ERROR_MESSAGE = "問題データを生成できませんでした。時間をおいて再度お試しください。"
 RESULT_ERROR_MESSAGE = "結果を表示できませんでした。時間をおいて再度お試しください。"
 
@@ -190,19 +192,79 @@ def main() -> None:
         st.error(ERROR_MESSAGE)
         return
 
+    selected_card_key = None
+    if st.session_state.answer_choice in CHART_TITLES:
+        selected_index = CHART_TITLES.index(st.session_state.answer_choice)
+        selected_card_key = CHART_CARD_KEYS[selected_index]
+
+    selected_card_css = ""
+    if selected_card_key is not None:
+        selected_card_css = f"""
+        .st-key-{selected_card_key} {{
+            background-color: #F3F8FF;
+            border: 2px solid #4A90E2;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+        }}
+        """
+
+    st.markdown(
+        f"""
+        <style>
+        [data-testid="stAppViewContainer"] {{
+            background-color: #F6F8FB;
+        }}
+        .st-key-chart_card_a,
+        .st-key-chart_card_b,
+        .st-key-chart_card_c {{
+            background-color: #FFFFFF;
+            border: 1px solid #D9E2EC;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+        }}
+        {selected_card_css}
+        .st-key-submit_answer button {{
+            background-color: #2F6FB2;
+            color: #FFFFFF;
+            border-radius: 10px;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.write(f"観察期間：{display_start_text} ～ {base_date_text}")
     st.write(f"基準日（予測時点）：{base_date_text}")
     st.write("観察データ：120共通取引日（おおむね約6か月）")
 
-    for chart, figure in zip(question.charts, figures, strict=True):
-        st.plotly_chart(figure, use_container_width=True)
-        st.button(
-            f"{chart.label}を選ぶ",
-            key=f"select_{chart.label.lower().replace(' ', '_')}",
-            disabled=False,
-            on_click=select_answer,
-            args=(chart.label,),
-        )
+    for chart, figure, card_key, button_key in zip(
+        question.charts,
+        figures,
+        CHART_CARD_KEYS,
+        CHART_BUTTON_KEYS,
+        strict=True,
+    ):
+        with st.container(key=card_key):
+            select_column, chart_column = st.columns(
+                [1.5, 8.5],
+                vertical_alignment="center",
+            )
+            with select_column:
+                selection_mark = (
+                    "●"
+                    if st.session_state.answer_choice == chart.label
+                    else "○"
+                )
+                st.button(
+                    f"{selection_mark} {chart.label}",
+                    key=button_key,
+                    on_click=select_answer,
+                    args=(chart.label,),
+                    width="stretch",
+                )
+            with chart_column:
+                st.plotly_chart(figure, use_container_width=True)
 
     st.write(
         "📈 あなたが利用できる情報はここまでです。"
