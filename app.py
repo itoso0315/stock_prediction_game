@@ -119,7 +119,8 @@ def main() -> None:
         st.header("結果発表")
         st.write(f"基準日：{base_date_text}")
         st.write(
-            f"評価日：{evaluation_date_text}（60営業日後（約3か月後））"
+            f"評価日：{evaluation_date_text}"
+            "（20共通取引日後・おおむね約1か月後）"
         )
         is_correct = st.session_state.selected_label == question.correct_label
         st.write(f"あなたの回答：{st.session_state.selected_label}")
@@ -189,10 +190,7 @@ def main() -> None:
 
     st.write(f"観察期間：{display_start_text} ～ {base_date_text}")
     st.write(f"基準日（予測時点）：{base_date_text}")
-    st.write(
-        "📈 あなたが利用できる情報はここまでです。"
-        "この先60営業日の値動きを予測してください。"
-    )
+    st.write("観察データ：120共通取引日（おおむね約6か月）")
 
     for chart, figure in zip(question.charts, figures, strict=True):
         st.plotly_chart(figure, use_container_width=True)
@@ -203,6 +201,11 @@ def main() -> None:
             on_click=select_answer,
             args=(chart.label,),
         )
+
+    st.write(
+        "📈 あなたが利用できる情報はここまでです。"
+        "この先約1か月（20共通取引日）の値動きを予測してください。"
+    )
 
     if st.session_state.answer_choice is not None:
         st.write(f"選択中：{st.session_state.answer_choice}")

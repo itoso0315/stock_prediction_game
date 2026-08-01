@@ -8,8 +8,8 @@ import random
 import pandas as pd
 
 
-DISPLAY_TRADING_DAYS = 60
-FORECAST_TRADING_DAYS = 60
+DISPLAY_TRADING_DAYS = 120
+FORECAST_TRADING_DAYS = 20
 _CHART_LABELS = ("Chart A", "Chart B", "Chart C")
 _REQUIRED_PRICE_COLUMNS = ("Open", "High", "Low", "Close", "Volume")
 
@@ -238,7 +238,7 @@ def generate_game_question(
 
 @dataclass(frozen=True)
 class Question:
-    """1銘柄分のチャートと、その後約3か月の結果を保持する。"""
+    """1銘柄分の約6か月のチャートと、その後約1か月の結果を保持する。"""
 
     display_data: pd.DataFrame
     future_return_percent: float
@@ -270,8 +270,8 @@ def generate_question(
 ) -> Question:
     """ランダムな開始位置から出題用データを生成する。
 
-    連続する60営業日をチャート表示用に切り出し、その最終日の終値と、
-    さらに60営業日後（約3か月後）の終値から騰落率を計算する。
+    連続する120営業日をチャート表示用に切り出し、その最終日の終値と、
+    さらに20営業日後（約1か月後）の終値から騰落率を計算する。
 
     Args:
         prices: 日付順のOHLCVデータ。少なくともClose列が必要。
