@@ -1,6 +1,8 @@
 """過去の株価データから出題用データを生成する。"""
 
 from dataclasses import dataclass
+import math
+from numbers import Real
 import random
 
 import pandas as pd
@@ -8,6 +10,30 @@ import pandas as pd
 
 DISPLAY_TRADING_DAYS = 60
 FORECAST_TRADING_DAYS = 60
+_CHART_LABELS = ("Chart A", "Chart B", "Chart C")
+_REQUIRED_PRICE_COLUMNS = ("Open", "High", "Low", "Close", "Volume")
+
+
+@dataclass(frozen=True)
+class ChartQuestion:
+    """1銘柄分の表示データと将来評価結果を保持する。"""
+
+    label: str
+    ticker: str
+    display_data: pd.DataFrame
+    base_date: pd.Timestamp
+    evaluation_date: pd.Timestamp
+    base_close: float
+    future_close: float
+    future_return_percent: float
+
+
+@dataclass(frozen=True)
+class GameQuestion:
+    """Chart A、Chart B、Chart Cからなるゲーム1問分を保持する。"""
+
+    charts: tuple[ChartQuestion, ChartQuestion, ChartQuestion]
+    correct_label: str
 
 
 def _normalize_price_frame(prices: pd.DataFrame) -> pd.DataFrame:
@@ -105,6 +131,104 @@ def select_random_tickers(
 
     random_source = rng if rng is not None else random
     return tuple(random_source.sample(tickers, count))
+
+
+def _validated_close(value: object) -> float:
+    """終値が数値、有限、正値であることを検証して返す。"""
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise ValueError("終値は数値である必要があります。")
+    close = float(value)
+    if not math.isfinite(close) or close <= 0:
+        raise ValueError("終値は有限かつ0より大きい必要があります。")
+    return close
+
+
+def generate_game_question(
+    tickers: tuple[str, str, str],
+    price_frames: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame],
+    rng: random.Random | None = None,
+) -> GameQuestion:
+    """3銘柄の共通取引日からゲーム1問分のデータを生成する。
+
+    Args:
+        tickers: Chart A、Chart B、Chart Cに対応する証券コード。
+        price_frames: 証券コードと同じ順番の3銘柄分のOHLCVデータ。
+        rng: 結果を再現するときに使用する乱数生成器。
+
+    Returns:
+        表示データ、将来評価結果、正解ラベルを持つゲーム問題。
+
+    Raises:
+        ValueError: 入力値、共通取引日、価格が要件を満たさない場合。
+    """
+    if len(tickers) != 3 or len(price_frames) != 3:
+        raise ValueError("3銘柄分の証券コードと株価データが必要です。")
+    if any(not isinstance(ticker, str) or not ticker for ticker in tickers):
+        raise ValueError("証券コードは空でない文字列である必要があります。")
+    if len(set(tickers)) != 3:
+        raise ValueError("証券コードに重複があります。")
+
+    for prices in price_frames:
+        if prices.empty:
+            raise ValueError("空の株価データは使用できません。")
+        missing_columns = [
+            column for column in _REQUIRED_PRICE_COLUMNS if column not in prices
+        ]
+        if missing_columns:
+            missing = ", ".join(missing_columns)
+            raise ValueError(f"株価データに必要な列がありません: {missing}")
+
+    normalized_frames = tuple(
+        _normalize_price_frame(prices) for prices in price_frames
+    )
+    common_dates = normalized_frames[0].index
+    for prices in normalized_frames[1:]:
+        common_dates = common_dates.intersection(prices.index)
+    common_dates = pd.DatetimeIndex(common_dates).sort_values()
+
+    required_days = DISPLAY_TRADING_DAYS + FORECAST_TRADING_DAYS
+    if len(common_dates) < required_days:
+        raise ValueError("問題生成に必要な共通取引日が足りません。")
+
+    max_start_index = len(common_dates) - required_days
+    random_source = rng if rng is not None else random
+    start_index = random_source.randint(0, max_start_index) if max_start_index else 0
+    display_end_index = start_index + DISPLAY_TRADING_DAYS - 1
+    evaluation_index = display_end_index + FORECAST_TRADING_DAYS
+    display_dates = common_dates[start_index : display_end_index + 1]
+    base_date = pd.Timestamp(common_dates[display_end_index])
+    evaluation_date = pd.Timestamp(common_dates[evaluation_index])
+
+    charts: list[ChartQuestion] = []
+    for label, ticker, prices in zip(
+        _CHART_LABELS,
+        tickers,
+        normalized_frames,
+        strict=True,
+    ):
+        base_close = _validated_close(prices.at[base_date, "Close"])
+        future_close = _validated_close(prices.at[evaluation_date, "Close"])
+        display_data = prices.loc[display_dates].copy(deep=True)
+        display_data.index = display_dates.copy()
+        charts.append(
+            ChartQuestion(
+                label=label,
+                ticker=ticker,
+                display_data=display_data,
+                base_date=base_date,
+                evaluation_date=evaluation_date,
+                base_close=base_close,
+                future_close=future_close,
+                future_return_percent=calculate_return_percent(
+                    base_close,
+                    future_close,
+                ),
+            )
+        )
+
+    chart_tuple = (charts[0], charts[1], charts[2])
+    correct_chart = max(chart_tuple, key=lambda chart: chart.future_return_percent)
+    return GameQuestion(charts=chart_tuple, correct_label=correct_chart.label)
 
 
 @dataclass(frozen=True)

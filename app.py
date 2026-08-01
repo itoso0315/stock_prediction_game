@@ -4,12 +4,12 @@ import streamlit as st
 
 from data.downloader import download_daily_prices
 from data.nikkei225 import NIKKEI_225_TICKERS
-from game.question_generator import select_common_window, select_random_tickers
+from game.question_generator import generate_game_question, select_random_tickers
 from ui.charts import create_candlestick_chart
 
 
 CHART_TITLES = ("Chart A", "Chart B", "Chart C")
-ERROR_MESSAGE = "チャートを表示できませんでした。時間をおいて再度お試しください。"
+ERROR_MESSAGE = "問題データを生成できませんでした。時間をおいて再度お試しください。"
 
 
 def main() -> None:
@@ -22,10 +22,13 @@ def main() -> None:
             download_daily_prices(ticker, period="5y")
             for ticker in selected_tickers
         )
-        common_frames = select_common_window(price_frames)
+        question = generate_game_question(selected_tickers, price_frames)
         figures = tuple(
-            create_candlestick_chart(prices, title=title)
-            for prices, title in zip(common_frames, CHART_TITLES, strict=True)
+            create_candlestick_chart(
+                chart.display_data,
+                title=chart.label,
+            )
+            for chart in question.charts
         )
         for figure in figures:
             st.plotly_chart(figure, use_container_width=True)
