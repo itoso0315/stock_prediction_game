@@ -5,7 +5,7 @@ import streamlit as st
 from data.downloader import download_daily_prices
 from data.nikkei225 import NIKKEI_225_TICKERS
 from game.question_generator import generate_game_question, select_random_tickers
-from ui.charts import create_candlestick_chart
+from ui.charts import create_candlestick_chart, create_review_chart
 
 
 CHART_TITLES = ("Chart A", "Chart B", "Chart C")
@@ -91,10 +91,12 @@ def main() -> None:
 
     if st.session_state.current_view == "result":
         try:
-            future_figures = tuple(
-                create_candlestick_chart(
+            review_figures = tuple(
+                create_review_chart(
+                    chart.display_data,
                     chart.future_data,
-                    title=f"{chart.label} - Result",
+                    chart.base_date,
+                    title=f"{chart.label} - Review",
                 )
                 for chart in question.charts
             )
@@ -129,7 +131,7 @@ def main() -> None:
 
         for chart, figure, comparison in zip(
             question.charts,
-            future_figures,
+            review_figures,
             comparison_texts,
             strict=True,
         ):
