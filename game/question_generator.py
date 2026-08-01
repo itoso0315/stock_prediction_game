@@ -10,6 +10,76 @@ DISPLAY_TRADING_DAYS = 60
 FORECAST_TRADING_DAYS = 60
 
 
+def _normalize_price_frame(prices: pd.DataFrame) -> pd.DataFrame:
+    """株価データのコピーを日付単位の一意なインデックスへ正規化する。"""
+    if prices.empty:
+        raise ValueError("空の株価データは使用できません。")
+
+    normalized = prices.copy(deep=True)
+    try:
+        dates = pd.DatetimeIndex(pd.to_datetime(normalized.index, errors="raise"))
+    except (TypeError, ValueError) as error:
+        raise ValueError("日付へ変換できないインデックスが含まれています。") from error
+
+    if dates.isna().any():
+        raise ValueError("日付インデックスにNaTが含まれています。")
+    if dates.tz is not None:
+        dates = dates.tz_localize(None)
+
+    normalized.index = dates.normalize()
+    normalized = normalized.loc[
+        ~normalized.index.duplicated(keep="last")
+    ].sort_index()
+    return normalized
+
+
+def select_common_window(
+    price_frames: tuple[pd.DataFrame, ...],
+    window_size: int = DISPLAY_TRADING_DAYS,
+    rng: random.Random | None = None,
+) -> tuple[pd.DataFrame, ...]:
+    """3銘柄の共通取引日から同一期間の株価データを抽出する。
+
+    Args:
+        price_frames: 入力順を維持する3銘柄分の株価データ。
+        window_size: 抽出する共通取引日の件数。
+        rng: 結果を再現するときに使用する乱数生成器。
+
+    Returns:
+        同一の日付インデックスを持つ株価データのタプル。
+
+    Raises:
+        ValueError: 入力数、期間、日付インデックスが要件を満たさない場合。
+    """
+    if window_size <= 0:
+        raise ValueError("表示期間は1日以上である必要があります。")
+    if len(price_frames) != 3:
+        raise ValueError("3銘柄分の株価データが必要です。")
+
+    normalized_frames = tuple(
+        _normalize_price_frame(prices) for prices in price_frames
+    )
+    common_dates = normalized_frames[0].index
+    for prices in normalized_frames[1:]:
+        common_dates = common_dates.intersection(prices.index)
+    common_dates = pd.DatetimeIndex(common_dates).sort_values()
+
+    if len(common_dates) < window_size:
+        raise ValueError("共通取引日が表示期間に足りません。")
+
+    max_start_index = len(common_dates) - window_size
+    random_source = rng if rng is not None else random
+    start_index = random_source.randint(0, max_start_index) if max_start_index else 0
+    selected_dates = common_dates[start_index : start_index + window_size]
+
+    selected_frames: list[pd.DataFrame] = []
+    for prices in normalized_frames:
+        selected = prices.loc[selected_dates].copy()
+        selected.index = selected_dates.copy()
+        selected_frames.append(selected)
+    return tuple(selected_frames)
+
+
 def select_random_tickers(
     tickers: tuple[str, ...],
     count: int = 3,
