@@ -10,6 +10,7 @@ import pandas as pd
 
 DISPLAY_TRADING_DAYS = 120
 FORECAST_TRADING_DAYS = 20
+CASH_OPTION_LABEL = "どれにも投資しない（現金で保有）"
 _CHART_LABELS = ("Chart A", "Chart B", "Chart C")
 _REQUIRED_PRICE_COLUMNS = ("Open", "High", "Low", "Close", "Volume")
 
@@ -232,8 +233,13 @@ def generate_game_question(
         )
 
     chart_tuple = (charts[0], charts[1], charts[2])
-    correct_chart = max(chart_tuple, key=lambda chart: chart.future_return_percent)
-    return GameQuestion(charts=chart_tuple, correct_label=correct_chart.label)
+    best_chart = max(chart_tuple, key=lambda chart: chart.future_return_percent)
+    correct_label = (
+        CASH_OPTION_LABEL
+        if best_chart.future_return_percent <= 0
+        else best_chart.label
+    )
+    return GameQuestion(charts=chart_tuple, correct_label=correct_label)
 
 
 @dataclass(frozen=True)

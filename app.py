@@ -4,7 +4,11 @@ import streamlit as st
 
 from data.downloader import download_daily_prices
 from data.nikkei225 import NIKKEI_225_TICKERS
-from game.question_generator import generate_game_question, select_random_tickers
+from game.question_generator import (
+    CASH_OPTION_LABEL,
+    generate_game_question,
+    select_random_tickers,
+)
 from ui.charts import create_candlestick_chart, create_review_chart
 
 
@@ -116,6 +120,19 @@ def main() -> None:
                 )
                 for chart in question.charts
             )
+            answer_text = f"あなたの回答：{st.session_state.selected_label}"
+            correct_text = f"正解：{question.correct_label}"
+            is_correct = (
+                st.session_state.selected_label == question.correct_label
+            )
+            result_text = "正解！" if is_correct else "不正解"
+            cash_return_text = "現金で保有：0.00%"
+            cash_result_text = (
+                "3つのChartがすべて0%以下だったため、"
+                "現金保有が最も良い結果でした。"
+                if question.correct_label == CASH_OPTION_LABEL
+                else None
+            )
         except Exception:
             st.error(RESULT_ERROR_MESSAGE)
             return
@@ -126,10 +143,12 @@ def main() -> None:
             f"評価日：{evaluation_date_text}"
             "（20共通取引日後・おおむね約1か月後）"
         )
-        is_correct = st.session_state.selected_label == question.correct_label
-        st.write(f"あなたの回答：{st.session_state.selected_label}")
-        st.write(f"正解：{question.correct_label}")
-        st.write("正解！" if is_correct else "不正解")
+        st.write(answer_text)
+        st.write(correct_text)
+        st.write(result_text)
+        st.write(cash_return_text)
+        if cash_result_text is not None:
+            st.write(cash_result_text)
 
         for chart, figure, comparison in zip(
             question.charts,
@@ -196,6 +215,8 @@ def main() -> None:
     if st.session_state.answer_choice in CHART_TITLES:
         selected_index = CHART_TITLES.index(st.session_state.answer_choice)
         selected_card_key = CHART_CARD_KEYS[selected_index]
+    elif st.session_state.answer_choice == CASH_OPTION_LABEL:
+        selected_card_key = "cash_option_card"
 
     selected_card_css = ""
     if selected_card_key is not None:
@@ -215,7 +236,8 @@ def main() -> None:
         }}
         .st-key-chart_card_a,
         .st-key-chart_card_b,
-        .st-key-chart_card_c {{
+        .st-key-chart_card_c,
+        .st-key-cash_option_card {{
             background-color: #FFFFFF;
             border: 1px solid #D9E2EC;
             border-radius: 12px;
@@ -270,9 +292,25 @@ def main() -> None:
         "📈 あなたが利用できる情報はここまでです。"
         "この先約1か月（20共通取引日）の値動きを予測してください。"
     )
+    st.write(
+        "3つとも上昇しないと予想する場合は、"
+        f"「{CASH_OPTION_LABEL}」を選択してください。"
+    )
 
-    if st.session_state.answer_choice is not None:
-        st.write(f"選択中：{st.session_state.answer_choice}")
+    with st.container(key="cash_option_card"):
+        cash_selection_mark = (
+            "●"
+            if st.session_state.answer_choice == CASH_OPTION_LABEL
+            else "○"
+        )
+        st.button(
+            f"{cash_selection_mark} どれにも投資しない",
+            key="select_cash_option",
+            on_click=select_answer,
+            args=(CASH_OPTION_LABEL,),
+        )
+        st.write("現金で保有する（騰落率 0.00%）")
+        st.caption("3つとも上昇しないと思う場合はこちら")
 
     if st.button("回答する", key="submit_answer"):
         if st.session_state.answer_choice is None:
