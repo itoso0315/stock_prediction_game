@@ -97,6 +97,37 @@ def main() -> None:
                 f"{chart.label}：{format_return_percent(chart.future_return_percent)}"
             )
             st.plotly_chart(figure, use_container_width=True)
+
+        if st.button("次の問題", key="next_question"):
+            try:
+                next_tickers = select_random_tickers(NIKKEI_225_TICKERS)
+                next_price_frames = tuple(
+                    download_daily_prices(ticker, period="5y")
+                    for ticker in next_tickers
+                )
+                next_question = generate_game_question(
+                    next_tickers,
+                    next_price_frames,
+                )
+                tuple(
+                    create_candlestick_chart(
+                        chart.display_data,
+                        title=chart.label,
+                    )
+                    for chart in next_question.charts
+                )
+            except Exception:
+                st.error(ERROR_MESSAGE)
+            else:
+                st.session_state.update(
+                    {
+                        "game_question": next_question,
+                        "answer_choice": None,
+                        "selected_label": None,
+                        "submitted": False,
+                    }
+                )
+                st.rerun()
         return
 
     try:
