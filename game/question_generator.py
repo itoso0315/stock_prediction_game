@@ -10,6 +10,33 @@ DISPLAY_TRADING_DAYS = 60
 FORECAST_TRADING_DAYS = 60
 
 
+def select_random_tickers(
+    tickers: tuple[str, ...],
+    count: int = 3,
+    rng: random.Random | None = None,
+) -> tuple[str, ...]:
+    """銘柄一覧から重複しない銘柄をランダムに選択する。
+
+    Args:
+        tickers: 選択元の銘柄コード一覧。
+        count: 選択する銘柄数。
+        rng: 結果を再現するときに使用する乱数生成器。
+
+    Returns:
+        選択された銘柄コードのタプル。
+
+    Raises:
+        ValueError: 選択数が0以下、または一覧の件数を超える場合。
+    """
+    if count <= 0:
+        raise ValueError("選択数は1以上である必要があります。")
+    if count > len(tickers):
+        raise ValueError("選択数が銘柄一覧の件数を超えています。")
+
+    random_source = rng if rng is not None else random
+    return tuple(random_source.sample(tickers, count))
+
+
 @dataclass(frozen=True)
 class Question:
     """1銘柄分のチャートと、その後約3か月の結果を保持する。"""

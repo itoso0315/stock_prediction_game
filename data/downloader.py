@@ -13,7 +13,7 @@ def normalize_japanese_ticker(ticker: str) -> str:
     """銘柄コードをYahoo Financeの日本株ティッカー形式へ変換する。
 
     Args:
-        ticker: 4桁の銘柄コード、または末尾が ``.T`` のティッカー。
+        ticker: 4文字の銘柄コード、または末尾が ``.T`` のティッカー。
 
     Returns:
         末尾に ``.T`` が付いたYahoo Finance向けティッカー。
@@ -27,8 +27,8 @@ def normalize_japanese_ticker(ticker: str) -> str:
     else:
         code = normalized
 
-    if len(code) != 4 or not code.isdigit():
-        raise ValueError("日本株の4桁銘柄コードを指定してください。")
+    if len(code) != 4 or not code.isascii() or not code.isalnum():
+        raise ValueError("日本株の4文字銘柄コードを指定してください。")
     return f"{code}.T"
 
 
@@ -44,7 +44,7 @@ def download_daily_prices(
     どちらも未指定の場合は、利用可能な全期間を取得する。
 
     Args:
-        ticker: 4桁の日本株銘柄コード、または ``.T`` 付きティッカー。
+        ticker: 4文字の日本株銘柄コード、または ``.T`` 付きティッカー。
         start: 取得開始日（この日を含む）。
         end: 取得終了日（Yahoo Financeではこの日を含まない）。
         period: ``5y`` など、yfinanceが受け付ける取得期間。
