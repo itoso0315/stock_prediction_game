@@ -63,6 +63,11 @@ def format_return_percent(value: float) -> str:
     return f"{rounded:+.2f}%"
 
 
+def format_price(value: float) -> str:
+    """価格を3桁区切り、小数第2位、円表記へ変換する。"""
+    return f"{value:,.2f}円"
+
+
 def main() -> None:
     """3銘柄のチャートと回答UIを表示する。"""
     st.title("Stock Trainer")
@@ -93,20 +98,43 @@ def main() -> None:
                 )
                 for chart in question.charts
             )
+            common_chart = question.charts[0]
+            base_date_text = common_chart.base_date.strftime("%Y-%m-%d")
+            evaluation_date_text = common_chart.evaluation_date.strftime(
+                "%Y-%m-%d"
+            )
+            comparison_texts = tuple(
+                (
+                    f"基準日終値：{format_price(chart.base_close)}",
+                    f"評価日終値：{format_price(chart.future_close)}",
+                    "騰落率："
+                    f"{format_return_percent(chart.future_return_percent)}",
+                )
+                for chart in question.charts
+            )
         except Exception:
             st.error(RESULT_ERROR_MESSAGE)
             return
 
         st.header("結果発表")
+        st.write(f"基準日：{base_date_text}")
+        st.write(
+            f"評価日：{evaluation_date_text}（60営業日後（約3か月後））"
+        )
         is_correct = st.session_state.selected_label == question.correct_label
         st.write(f"あなたの回答：{st.session_state.selected_label}")
         st.write(f"正解：{question.correct_label}")
         st.write("正解！" if is_correct else "不正解")
 
-        for chart, figure in zip(question.charts, future_figures, strict=True):
-            st.write(
-                f"{chart.label}：{format_return_percent(chart.future_return_percent)}"
-            )
+        for chart, figure, comparison in zip(
+            question.charts,
+            future_figures,
+            comparison_texts,
+            strict=True,
+        ):
+            st.write(chart.label)
+            for text in comparison:
+                st.write(text)
             st.plotly_chart(figure, use_container_width=True)
 
         if st.button("次の問題", key="next_question"):
@@ -150,9 +178,21 @@ def main() -> None:
             )
             for chart in question.charts
         )
+        common_chart = question.charts[0]
+        display_start_text = common_chart.display_data.index[0].strftime(
+            "%Y-%m-%d"
+        )
+        base_date_text = common_chart.base_date.strftime("%Y-%m-%d")
     except Exception:
         st.error(ERROR_MESSAGE)
         return
+
+    st.write(f"観察期間：{display_start_text} ～ {base_date_text}")
+    st.write(f"基準日（予測時点）：{base_date_text}")
+    st.write(
+        "📈 あなたが利用できる情報はここまでです。"
+        "この先60営業日の値動きを予測してください。"
+    )
 
     for chart, figure in zip(question.charts, figures, strict=True):
         st.plotly_chart(figure, use_container_width=True)
