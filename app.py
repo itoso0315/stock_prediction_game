@@ -6,6 +6,7 @@ from data.downloader import download_daily_prices
 from data.nikkei225 import NIKKEI_225_TICKERS
 from game.question_generator import (
     CASH_OPTION_LABEL,
+    create_yahoo_chart_url,
     generate_game_question,
     select_random_tickers,
 )
@@ -120,6 +121,14 @@ def main() -> None:
                 )
                 for chart in question.charts
             )
+            company_texts = tuple(
+                f"{chart.company_name}（{chart.security_code}）"
+                for chart in question.charts
+            )
+            yahoo_chart_urls = tuple(
+                create_yahoo_chart_url(chart.ticker)
+                for chart in question.charts
+            )
             answer_text = f"あなたの回答：{st.session_state.selected_label}"
             correct_text = f"正解：{question.correct_label}"
             is_correct = (
@@ -150,13 +159,20 @@ def main() -> None:
         if cash_result_text is not None:
             st.write(cash_result_text)
 
-        for chart, figure, comparison in zip(
+        for chart, figure, comparison, company_text, yahoo_url in zip(
             question.charts,
             review_figures,
             comparison_texts,
+            company_texts,
+            yahoo_chart_urls,
             strict=True,
         ):
             st.write(chart.label)
+            st.write(company_text)
+            st.link_button(
+                "Yahoo!ファイナンスでチャートを見る",
+                yahoo_url,
+            )
             for text in comparison:
                 st.write(text)
             st.plotly_chart(figure, use_container_width=True)
