@@ -1,12 +1,21 @@
 # Chart helper module for candlestick and review charts
 import pandas as pd
 import plotly.graph_objs as go
+from plotly.subplots import make_subplots
 
 def _get_dates(price_df):
     """Return chart dates from a Date column or the DataFrame index."""
     if "Date" in price_df.columns:
         return price_df["Date"]
     return price_df.index
+
+
+def _volume_colors(price_df):
+    """Return red/green volume colors matching bullish/bearish candles."""
+    return [
+        "red" if close >= open_price else "green"
+        for open_price, close in zip(price_df["Open"], price_df["Close"])
+    ]
 
 def create_candlestick_chart(
     price_df,
@@ -19,7 +28,13 @@ def create_candlestick_chart(
     Generate a Plotly candlestick chart with optional moving averages.
     price_df: pd.DataFrame with columns ['Date','Open','High','Low','Close']
     """
-    fig = go.Figure()
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.04,
+        row_heights=[0.78, 0.22],
+    )
     fig.add_trace(
         go.Candlestick(
             x=_get_dates(price_df),
@@ -33,7 +48,9 @@ def create_candlestick_chart(
             increasing_fillcolor="red",
             decreasing_line_color="green",
             decreasing_fillcolor="green",
-        )
+        ),
+        row=1,
+        col=1,
     )
     if show_ma25:
         ma25 = price_df["Close"].rolling(window=25).mean()
@@ -44,7 +61,9 @@ def create_candlestick_chart(
                 mode="lines",
                 name="MA25",
                 line=dict(color="orange", width=1),
-            )
+            ),
+            row=1,
+            col=1,
         )
     if show_ma50:
         ma50 = price_df["Close"].rolling(window=50).mean()
@@ -55,7 +74,9 @@ def create_candlestick_chart(
                 mode="lines",
                 name="MA50",
                 line=dict(color="green", width=1),
-            )
+            ),
+            row=1,
+            col=1,
         )
     if show_ma75:
         ma75 = price_df["Close"].rolling(window=75).mean()
@@ -66,12 +87,24 @@ def create_candlestick_chart(
                 mode="lines",
                 name="MA75",
                 line=dict(color="purple", width=1),
-            )
+            ),
+            row=1,
+            col=1,
         )
+    fig.add_trace(
+        go.Bar(
+            x=_get_dates(price_df),
+            y=price_df["Volume"],
+            marker_color=_volume_colors(price_df),
+            opacity=0.35,
+            name="Volume",
+            showlegend=False,
+        ),
+        row=2,
+        col=1,
+    )
     fig.update_layout(
         title=title,
-        xaxis_title="Date",
-        yaxis_title="Price",
         xaxis_rangeslider_visible=False,
         legend=dict(
             orientation="h",
@@ -81,8 +114,11 @@ def create_candlestick_chart(
             yanchor="top",
         ),
         margin=dict(l=0, r=0, t=30, b=0),
-        height=350,
+        height=430,
     )
+    fig.update_xaxes(title_text="Date", row=2, col=1)
+    fig.update_yaxes(title_text="Price", row=1, col=1)
+    fig.update_yaxes(title_text="Volume", row=2, col=1)
     return fig
 
 def create_review_chart(
@@ -99,7 +135,13 @@ def create_review_chart(
     display_data: pd.DataFrame (past data)
     future_data: pd.DataFrame (future data)
     """
-    fig = go.Figure()
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.04,
+        row_heights=[0.78, 0.22],
+    )
     # Historical data
     fig.add_trace(
         go.Candlestick(
@@ -114,7 +156,9 @@ def create_review_chart(
             increasing_fillcolor="red",
             decreasing_line_color="green",
             decreasing_fillcolor="green",
-        )
+        ),
+        row=1,
+        col=1,
     )
     # Future data
     fig.add_trace(
@@ -130,7 +174,9 @@ def create_review_chart(
             increasing_fillcolor="red",
             decreasing_line_color="green",
             decreasing_fillcolor="green",
-        )
+        ),
+        row=1,
+        col=1,
     )
     # Moving averages on the combined data
     # Keep the original date index when Date is stored in the index. Resetting it
@@ -145,7 +191,9 @@ def create_review_chart(
                 mode="lines",
                 name="MA25",
                 line=dict(color="orange", width=1),
-            )
+            ),
+            row=1,
+            col=1,
         )
     if show_ma50:
         ma50 = combined["Close"].rolling(window=50).mean()
@@ -156,7 +204,9 @@ def create_review_chart(
                 mode="lines",
                 name="MA50",
                 line=dict(color="green", width=1),
-            )
+            ),
+            row=1,
+            col=1,
         )
     if show_ma75:
         ma75 = combined["Close"].rolling(window=75).mean()
@@ -167,7 +217,22 @@ def create_review_chart(
                 mode="lines",
                 name="MA75",
                 line=dict(color="purple", width=1),
-            )
+            ),
+            row=1,
+            col=1,
+        )
+    for prices in (display_data, future_data):
+        fig.add_trace(
+            go.Bar(
+                x=_get_dates(prices),
+                y=prices["Volume"],
+                marker_color=_volume_colors(prices),
+                opacity=0.35,
+                name="Volume",
+                showlegend=False,
+            ),
+            row=2,
+            col=1,
         )
     # Optionally, add a vertical line for base_date
     if base_date is not None:
@@ -184,17 +249,27 @@ def create_review_chart(
             opacity=0.18,
             layer="below",
             line_width=0,
+            row="all",
+            col=1,
         )
         fig.add_vline(
             x=base_date,
             line=dict(color="black", width=2, dash="dash"),
-            annotation_text="予想時点",
-            annotation_position="top left",
+            row="all",
+            col=1,
+        )
+        fig.add_annotation(
+            x=base_date,
+            y=1,
+            xref="x",
+            yref="y domain",
+            text="予想時点",
+            showarrow=False,
+            xanchor="right",
+            yanchor="bottom",
         )
     fig.update_layout(
         title=title,
-        xaxis_title="Date",
-        yaxis_title="Price",
         xaxis_rangeslider_visible=False,
         legend=dict(
             orientation="h",
@@ -204,6 +279,9 @@ def create_review_chart(
             yanchor="top",
         ),
         margin=dict(l=0, r=0, t=30, b=0),
-        height=350,
+        height=430,
     )
+    fig.update_xaxes(title_text="Date", row=2, col=1)
+    fig.update_yaxes(title_text="Price", row=1, col=1)
+    fig.update_yaxes(title_text="Volume", row=2, col=1)
     return fig

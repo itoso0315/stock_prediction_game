@@ -14,9 +14,11 @@ _ALLOWED_LABELS = (*_CHART_LABELS, CASH_OPTION_LABEL)
 _REQUIRED_COLUMNS = ("High", "Low", "Close", "Volume")
 _MINIMUM_ROWS = 80
 _FALLBACK_COMMENT = (
-    "今回は明確なテクニカル特徴を1つに絞れませんでした。"
-    "複数の指標を組み合わせて確認してみましょう。"
+    "今回は移動平均線、直近の高値・安値、出来高の方向がそろわず、"
+    "観察時点の指標だけでは優位性を明確に判断できませんでした。"
+    "テクニカル指標は将来を保証するものではなく、複数の根拠が同じ方向を示すかを確認することが重要です。"
 )
+_MAX_COMMENT_LENGTH = 360
 
 
 def extract_technical_features(prices: pd.DataFrame) -> dict[str, object]:
@@ -139,7 +141,7 @@ def generate_technical_comment(
         selected_label: 利用者が確定した回答ラベル。
 
     Returns:
-        観察期間データだけを根拠にした120文字以内の解説。
+        観察期間データだけを根拠にした360文字以内の解説。
 
     Raises:
         ValueError: 問題構造または回答・正解ラベルが不正な場合。
@@ -153,6 +155,13 @@ def generate_technical_comment(
         }
         if question.correct_label == CASH_OPTION_LABEL:
             comment = _cash_comment(features_by_label)
+            if selected_label in _CHART_LABELS:
+                caution = _caution_comment(
+                    selected_label,
+                    features_by_label[selected_label],
+                )
+                if caution is not None:
+                    comment = f"{comment}{caution}"
         else:
             correct_features = features_by_label[question.correct_label]
             comment = _strength_comment(question.correct_label, correct_features)
@@ -165,10 +174,13 @@ def generate_technical_comment(
                     features_by_label[selected_label],
                 )
                 if caution is not None:
-                    combined = f"{comment}{caution}"
-                    if len(combined) <= 120:
-                        comment = combined
-        if len(comment) > 120:
+                    comment = f"{comment}{caution}"
+            elif selected_label == CASH_OPTION_LABEL:
+                comment = (
+                    f"{comment}現金を選ぶとこの上昇シグナルを取り逃すため、"
+                    "今回は投資する判断が適切でした。"
+                )
+        if len(comment) > _MAX_COMMENT_LENGTH:
             return _FALLBACK_COMMENT
         return comment
     except Exception:
@@ -203,42 +215,41 @@ def _validate_comment_inputs(
 
 
 def _strength_comment(label: str, features: dict[str, object]) -> str:
-    """正解Chartの最優先の強みを固定文で返す。"""
+    """正解Chartの複数の強みと、それらが示す意味を返す。"""
+    evidence: list[str] = []
     all_slopes_up = all(
         features[key] == "up"
         for key in ("ma25_slope", "ma50_slope", "ma75_slope")
     )
     if features["ma_alignment"] == "bullish" and all_slopes_up:
-        return (
-            f"正解の{label}は、MA25・MA50・MA75が上向きの順行で、"
-            "上昇トレンドが比較的明確でした。"
-        )
-    if all_slopes_up:
-        return (
-            f"正解の{label}は、MA25・MA50・MA75がすべて上向きで、"
-            "上昇方向への流れがそろっていました。"
-        )
+        evidence.append("MA25＞MA50＞MA75の順行で、3本すべての傾きも上向き")
+    elif all_slopes_up:
+        evidence.append("MA25・MA50・MA75の傾きがすべて上向き")
+    elif features["ma_alignment"] == "bullish":
+        evidence.append("MA25＞MA50＞MA75の順行")
     if features["price_structure"] == "higher":
-        return (
-            f"正解の{label}は、直近で高値と安値を切り上げており、"
-            "買いの流れが続いていました。"
-        )
+        evidence.append("直近20日における高値・安値の切り上げ")
     if (
         features["close_above_ma75"] is True
         and features["ma75_slope"] == "up"
     ):
-        return (
-            f"正解の{label}は、株価が上向きのMA75より上にあり、"
-            "中長期の上昇基調を維持していました。"
-        )
+        evidence.append("終値が上向きのMA75を上回る中長期の強い位置")
+    elif features["close_above_ma25"] is True:
+        evidence.append("終値がMA25を上回る短期的に強い位置")
     if features["volume_trend"] == "up":
+        evidence.append("直近10日の平均出来高がその前の10日より20%以上増加")
+
+    if not evidence:
         return (
-            f"正解の{label}は、直近で出来高が増えており、"
-            "値動きの勢いが強まっていました。"
+            f"正解の{label}には、観察時点で強い上昇シグナルが十分にはそろっていませんでした。"
+            "したがって正解は事前に確実に判別できたものではなく、結果的に3候補で最も高い騰落率となりました。"
         )
+
+    details = "、".join(evidence[:3])
     return (
-        f"正解の{label}は、今回使用した指標だけでは"
-        "明確な特徴を1つに絞れませんでした。"
+        f"正解の{label}は、{details}でした。"
+        "これらは価格の方向とトレンドの持続性が上向きであることを示し、"
+        "観察時点では3候補の中で上昇を期待しやすい形でした。"
     )
 
 
@@ -246,33 +257,30 @@ def _caution_comment(
     label: str,
     features: dict[str, object],
 ) -> str | None:
-    """不正解Chartの最優先の注意点を固定文で返す。"""
+    """不正解Chartの複数の注意点と、それらが示す意味を返す。"""
+    evidence: list[str] = []
     if features["ma_alignment"] == "bearish":
-        return (
-            f"一方、選択した{label}は移動平均線が下降型で、"
-            "下向きの流れが強い形でした。"
-        )
+        evidence.append("MA25＜MA50＜MA75の逆行で、短期ほど弱い並び")
     if features["ma75_slope"] == "down":
-        return (
-            f"一方、選択した{label}はMA75が下向きで、"
-            "中長期の流れが弱い形でした。"
-        )
+        evidence.append("MA75が下向きで中長期トレンドも弱い状態")
     if features["price_structure"] == "lower":
-        return (
-            f"一方、選択した{label}は高値と安値を切り下げており、"
-            "下落基調が続いていました。"
-        )
+        evidence.append("直近20日における高値・安値の切り下げ")
     if features["close_above_ma75"] is False:
-        return (
-            f"一方、選択した{label}は株価がMA75を上回っておらず、"
-            "中長期では弱い位置でした。"
-        )
+        evidence.append("終値がMA75を下回る弱い位置")
     if features["volume_trend"] == "down":
+        evidence.append("直近10日の平均出来高がその前の10日より20%以上減少")
+
+    if not evidence:
         return (
-            f"一方、選択した{label}は出来高が減少しており、"
-            "値動きの勢いが弱まっていました。"
+            f"一方、選択した{label}にも明確な弱気シグナルは少なく、"
+            "観察時点の指標だけで不正解を断定できる形ではありませんでした。"
         )
-    return None
+
+    details = "、".join(evidence[:3])
+    return (
+        f"一方、選択した{label}は、{details}でした。"
+        "これは上昇の継続性に注意が必要なサインであり、投資候補としての優先度を下げる根拠になります。"
+    )
 
 
 def _cash_comment(features_by_label: dict[str, dict[str, object]]) -> str:
