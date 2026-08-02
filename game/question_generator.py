@@ -9,7 +9,7 @@ import re
 import pandas as pd
 
 
-DISPLAY_TRADING_DAYS = 120
+DISPLAY_TRADING_DAYS = 200
 FORECAST_TRADING_DAYS = 20
 CASH_OPTION_LABEL = "どれにも投資しない（現金で保有）"
 _CHART_LABELS = ("Chart A", "Chart B", "Chart C")
@@ -398,7 +398,7 @@ def generate_question(
 ) -> Question:
     """ランダムな開始位置から出題用データを生成する。
 
-    連続する120営業日をチャート表示用に切り出し、その最終日の終値と、
+    連続する200営業日をチャート表示用に切り出し、その最終日の終値と、
     さらに20営業日後（約1か月後）の終値から騰落率を計算する。
 
     Args:

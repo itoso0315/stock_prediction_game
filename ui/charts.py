@@ -11,12 +11,18 @@ REQUIRED_COLUMNS = ["Open", "High", "Low", "Close", "Volume"]
 def create_candlestick_chart(
     prices: pd.DataFrame,
     title: str = "Chart A",
+    show_ma25: bool = False,
+    show_ma50: bool = False,
+    show_ma75: bool = False,
 ) -> go.Figure:
     """会社名を伏せたローソク足チャートを生成する。
 
     Args:
         prices: 日付インデックスとOHLCV列を持つデータ。
         title: チャートに表示するタイトル。
+        show_ma25: 25日移動平均線を表示するか。
+        show_ma50: 50日移動平均線を表示するか。
+        show_ma75: 75日移動平均線を表示するか。
 
     Returns:
         指定されたタイトルを持つPlotly Figure。
@@ -46,12 +52,43 @@ def create_candlestick_chart(
             high=prices["High"],
             low=prices["Low"],
             close=prices["Close"],
+            name="",
+            showlegend=False,
         ),
         row=1,
         col=1,
     )
+    moving_average_specs = (
+        (25, "MA25", "#2563EB", show_ma25),
+        (50, "MA50", "#F59E0B", show_ma50),
+        (75, "MA75", "#7C3AED", show_ma75),
+    )
+    for window, label, color, is_visible in moving_average_specs:
+        if not is_visible:
+            continue
+        moving_average = prices["Close"].rolling(
+            window=window,
+            min_periods=1,
+        ).mean()
+        figure.add_trace(
+            go.Scatter(
+                x=prices.index,
+                y=moving_average,
+                mode="lines",
+                name=label,
+                line={"width": 2, "color": color},
+                hovertemplate=f"{label}: %{{y:,.2f}}円<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
     figure.add_trace(
-        go.Bar(x=prices.index, y=prices["Volume"]),
+        go.Bar(
+            x=prices.index,
+            y=prices["Volume"],
+            name="",
+            showlegend=False,
+        ),
         row=2,
         col=1,
     )
@@ -65,7 +102,17 @@ def create_candlestick_chart(
     non_trading_dates = calendar_dates.difference(trading_dates)
     rangebreaks = [dict(values=non_trading_dates)]
 
-    figure.update_layout(title=title, showlegend=False)
+    figure.update_layout(
+        title=title,
+        showlegend=show_ma25 or show_ma50 or show_ma75,
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "left",
+            "x": 0,
+        },
+    )
     figure.update_xaxes(rangebreaks=rangebreaks, rangeslider_visible=False)
     return figure
 
@@ -75,23 +122,29 @@ def create_review_chart(
     future_data: pd.DataFrame,
     base_date: pd.Timestamp,
     title: str = "Chart A - Review",
+    show_ma25: bool = False,
+    show_ma50: bool = False,
+    show_ma75: bool = False,
 ) -> go.Figure:
     """観察期間と将来期間を連結した結果確認用チャートを生成する。
 
     Args:
-        display_data: 120共通取引日分の観察用OHLCVデータ。
+        display_data: 200共通取引日分の観察用OHLCVデータ。
         future_data: 20共通取引日分の将来OHLCVデータ。
         base_date: 観察期間の最終日。
         title: チャートに表示するタイトル。
+        show_ma25: 25日移動平均線を表示するか。
+        show_ma50: 50日移動平均線を表示するか。
+        show_ma75: 75日移動平均線を表示するか。
 
     Returns:
-        140共通取引日のローソク足と出来高を持つPlotly Figure。
+        220共通取引日のローソク足と出来高を持つPlotly Figure。
 
     Raises:
         ValueError: 必須列、件数、日付、期間境界が要件を満たさない場合。
     """
     frames = (
-        ("display_data", display_data, 120),
+        ("display_data", display_data, 200),
         ("future_data", future_data, 20),
     )
     validated: list[pd.DataFrame] = []
@@ -148,8 +201,8 @@ def create_review_chart(
         axis=0,
         copy=True,
     )
-    if len(combined_data) != 140:
-        raise ValueError("連結後のデータは140件である必要があります。")
+    if len(combined_data) != 220:
+        raise ValueError("連結後のデータは220件である必要があります。")
     if not combined_data.index.is_monotonic_increasing:
         raise ValueError("連結後の日付インデックスが昇順ではありません。")
     if combined_data.index.has_duplicates:
@@ -178,12 +231,43 @@ def create_review_chart(
             high=combined_data["High"],
             low=combined_data["Low"],
             close=combined_data["Close"],
+            name="",
+            showlegend=False,
         ),
         row=1,
         col=1,
     )
+    moving_average_specs = (
+        (25, "MA25", "#2563EB", show_ma25),
+        (50, "MA50", "#F59E0B", show_ma50),
+        (75, "MA75", "#7C3AED", show_ma75),
+    )
+    for window, label, color, is_visible in moving_average_specs:
+        if not is_visible:
+            continue
+        moving_average = combined_data["Close"].rolling(
+            window=window,
+            min_periods=1,
+        ).mean()
+        figure.add_trace(
+            go.Scatter(
+                x=combined_data.index,
+                y=moving_average,
+                mode="lines",
+                name=label,
+                line={"width": 2, "color": color},
+                hovertemplate=f"{label}: %{{y:,.2f}}円<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
     figure.add_trace(
-        go.Bar(x=combined_data.index, y=combined_data["Volume"]),
+        go.Bar(
+            x=combined_data.index,
+            y=combined_data["Volume"],
+            name="",
+            showlegend=False,
+        ),
         row=2,
         col=1,
     )
@@ -241,6 +325,16 @@ def create_review_chart(
     non_trading_dates = calendar_dates.difference(combined_data.index)
     rangebreaks = [dict(values=non_trading_dates)]
 
-    figure.update_layout(title=title, showlegend=False)
+    figure.update_layout(
+        title=title,
+        showlegend=show_ma25 or show_ma50 or show_ma75,
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "left",
+            "x": 0,
+        },
+    )
     figure.update_xaxes(rangebreaks=rangebreaks, rangeslider_visible=False)
     return figure
