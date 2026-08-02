@@ -8,6 +8,7 @@ import streamlit as st
 from analytics.explanation import generate_technical_comment
 from data.downloader import download_daily_prices
 from data.nikkei225 import NIKKEI_225_TICKERS
+
 from game.question_generator import (
     CASH_OPTION_LABEL,
     GameQuestion,
@@ -989,7 +990,7 @@ def main() -> None:
         figures = tuple(
             create_candlestick_chart(
                 chart.display_data,
-                title=chart.label,
+                title="",
                 show_ma25=show_ma25,
                 show_ma50=show_ma50,
                 show_ma75=show_ma75,
@@ -1099,21 +1100,18 @@ def main() -> None:
     )
 
     option_columns = st.columns(4, gap="small")
-    for index, (column, chart, button_key) in enumerate(
-        zip(
-            option_columns[:3],
-            question.charts,
-            CHART_BUTTON_KEYS,
-            strict=True,
-        ),
-        start=1,
+    for column, chart, button_key in zip(
+        option_columns[:3],
+        question.charts,
+        CHART_BUTTON_KEYS,
+        strict=True,
     ):
         with column:
             selection_mark = (
                 "●" if st.session_state.answer_choice == chart.label else "○"
             )
             st.button(
-                f"{selection_mark}  {chr(64 + index)}  {chart.label}\nに投資する",
+                f"{selection_mark}  {chart.label}\nに投資する",
                 key=button_key,
                 on_click=select_answer,
                 args=(chart.label,),
