@@ -61,24 +61,35 @@ def _generate_question_with_figures(
     show_ma50: bool,
     show_ma75: bool,
 ) -> GameQuestion:
-    """新しい問題を生成し、問題用Figure 3件の生成成功を確認する。"""
-    selected_tickers = select_random_tickers(NIKKEI_225_TICKERS)
-    price_frames = tuple(
-        download_daily_prices(ticker, period="5y")
-        for ticker in selected_tickers
-    )
-    question = generate_game_question(selected_tickers, price_frames)
-    tuple(
-        create_candlestick_chart(
-            chart.display_data,
-            title=chart.label,
-            show_ma25=show_ma25,
-            show_ma50=show_ma50,
-            show_ma75=show_ma75,
-        )
-        for chart in question.charts
-    )
-    return question
+    """株価取得に失敗した場合は、別の銘柄で再試行する。"""
+    last_error: Exception | None = None
+
+    for _ in range(5):
+        selected_tickers = select_random_tickers(NIKKEI_225_TICKERS)
+
+        try:
+            price_frames = tuple(
+                download_daily_prices(ticker, period="5y")
+                for ticker in selected_tickers
+            )
+            question = generate_game_question(selected_tickers, price_frames)
+            tuple(
+                create_candlestick_chart(
+                    chart.display_data,
+                    title=chart.label,
+                    show_ma25=show_ma25,
+                    show_ma50=show_ma50,
+                    show_ma75=show_ma75,
+                )
+                for chart in question.charts
+            )
+            return question
+        except Exception as error:
+            last_error = error
+
+    raise ValueError(
+        "株価データの取得に複数回失敗しました。"
+    ) from last_error
 
 
 def _initial_challenge_state(question: GameQuestion) -> dict[str, object]:
