@@ -253,6 +253,21 @@ def select_answer(label: str) -> None:
         st.session_state.answer_choice = label
 
 
+def toggle_moving_averages() -> None:
+    """MA25・MA50・MA75の表示状態を一括で切り替える。"""
+    show_all = not all(
+        bool(st.session_state.get(key, False))
+        for key in ("show_ma25", "show_ma50", "show_ma75")
+    )
+    st.session_state.update(
+        {
+            "show_ma25": show_all,
+            "show_ma50": show_all,
+            "show_ma75": show_all,
+        }
+    )
+
+
 def format_return_percent(value: float) -> str:
     """騰落率を符号付き小数第2位の表示文字列へ変換する。"""
     rounded = round(value, 2)
@@ -617,6 +632,25 @@ def render_global_styles() -> None:
             margin-bottom: 12px;
         }
 
+        .st-key-toggle_moving_averages button {
+            min-height: 64px;
+            border-radius: 14px;
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            color: #334155;
+            font-size: 1.1rem;
+            font-weight: 850;
+            justify-content: flex-start;
+            text-align: left;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+        }
+
+        .st-key-toggle_moving_averages button:hover {
+            background: #E0EDFF;
+            border-color: #93C5FD;
+            color: #1E3A5F;
+        }
+
         .st-key-cash_option_card {
             background: var(--warning-soft);
             border-color: #F5D48B;
@@ -954,14 +988,16 @@ def main() -> None:
             unsafe_allow_html=True,
         )
 
-        with st.expander("📈 テクニカル表示", expanded=False):
-            technical_columns = st.columns(3)
-            with technical_columns[0]:
-                show_ma25 = st.checkbox("MA25", value=False, key="show_ma25")
-            with technical_columns[1]:
-                show_ma50 = st.checkbox("MA50", value=False, key="show_ma50")
-            with technical_columns[2]:
-                show_ma75 = st.checkbox("MA75", value=False, key="show_ma75")
+        moving_averages_visible = show_ma25 and show_ma50 and show_ma75
+        st.button(
+            "📈 移動平均線表示（ON）"
+            if moving_averages_visible
+            else "📈 移動平均線表示",
+            key="toggle_moving_averages",
+            type="secondary",
+            on_click=toggle_moving_averages,
+            width="stretch",
+        )
 
         result_columns = st.columns(3, gap="small")
         for column, card_key, chart, figure, comparison, company_text, yahoo_url in zip(
@@ -1086,15 +1122,16 @@ def main() -> None:
         unsafe_allow_html=True,
     )
 
-    with st.expander("📈 テクニカル表示", expanded=False):
-        technical_columns = st.columns(3)
-
-        with technical_columns[0]:
-            show_ma25 = st.checkbox("MA25", value=False, key="show_ma25")
-        with technical_columns[1]:
-            show_ma50 = st.checkbox("MA50", value=False, key="show_ma50")
-        with technical_columns[2]:
-            show_ma75 = st.checkbox("MA75", value=False, key="show_ma75")
+    moving_averages_visible = show_ma25 and show_ma50 and show_ma75
+    st.button(
+        "📈 移動平均線表示（ON）"
+        if moving_averages_visible
+        else "📈 移動平均線表示",
+        key="toggle_moving_averages",
+        type="secondary",
+        on_click=toggle_moving_averages,
+        width="stretch",
+    )
 
     chart_columns = st.columns(3, gap="small")
 
