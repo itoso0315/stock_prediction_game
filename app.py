@@ -4,6 +4,7 @@
 from html import escape
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from analytics.explanation import generate_technical_comment
 from data.downloader import download_daily_prices
@@ -103,12 +104,50 @@ def _initial_challenge_state(question: GameQuestion) -> dict[str, object]:
         "challenge_question_number": 1,
         "challenge_correct_count": 0,
         "challenge_answered_count": 0,
+        "scroll_to_page_top": True,
     }
 
 
 def _is_plain_int(value: object) -> bool:
     """boolを除くintかどうかを返す。"""
     return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _scroll_page_to_top() -> None:
+    """Scroll Streamlit's main page container to the top after a view change."""
+    components.html(
+        """
+        <script>
+        const scrollToTop = () => {
+            const parentDocument = window.parent.document;
+            const selectors = [
+                '[data-testid="stMain"]',
+                'section.main',
+                '.main',
+                '[data-testid="stAppViewContainer"]'
+            ];
+            for (const selector of selectors) {
+                for (const element of parentDocument.querySelectorAll(selector)) {
+                    element.scrollTo(0, 0);
+                    element.scrollTop = 0;
+                    element.scrollLeft = 0;
+                }
+            }
+            if (parentDocument.scrollingElement) {
+                parentDocument.scrollingElement.scrollTo(0, 0);
+                parentDocument.scrollingElement.scrollTop = 0;
+            }
+            window.parent.scrollTo(0, 0);
+        };
+        scrollToTop();
+        window.parent.requestAnimationFrame(scrollToTop);
+        for (const delay of [50, 150, 350, 700, 1200]) {
+            window.parent.setTimeout(scrollToTop, delay);
+        }
+        </script>
+        """,
+        height=1,
+    )
 
 
 def _is_valid_session_state() -> bool:
@@ -696,6 +735,9 @@ def main() -> None:
         st.exception(e)
         return
 
+    if st.session_state.pop("scroll_to_page_top", False):
+        _scroll_page_to_top()
+
     question = st.session_state.game_question
     question_number = st.session_state.challenge_question_number
     correct_count = st.session_state.challenge_correct_count
@@ -965,7 +1007,12 @@ def main() -> None:
             if st.button(action_label, key=action_key, width="stretch"):
                 if is_last_question:
                     if _is_valid_session_state():
-                        st.session_state.update({"current_view": "challenge_result"})
+                        st.session_state.update(
+                            {
+                                "current_view": "challenge_result",
+                                "scroll_to_page_top": True,
+                            }
+                        )
                         st.rerun()
                     else:
                         try:
@@ -992,6 +1039,7 @@ def main() -> None:
                                 "challenge_question_number": question_number + 1,
                                 "challenge_correct_count": correct_count,
                                 "challenge_answered_count": answered_count,
+                                "scroll_to_page_top": True,
                             }
                         )
                         st.rerun()
@@ -1168,6 +1216,7 @@ def main() -> None:
                         "current_view": "result",
                         "challenge_answered_count": next_answered_count,
                         "challenge_correct_count": next_correct_count,
+                        "scroll_to_page_top": True,
                     }
                 )
                 st.rerun()
