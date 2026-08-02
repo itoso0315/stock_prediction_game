@@ -5,6 +5,7 @@ from html import escape
 
 import streamlit as st
 
+from analytics.explanation import generate_technical_comment
 from data.downloader import download_daily_prices
 from data.nikkei225 import NIKKEI_225_TICKERS
 from game.question_generator import (
@@ -20,6 +21,7 @@ from ui.charts import create_candlestick_chart, create_review_chart
 CHART_TITLES = ("Chart A", "Chart B", "Chart C")
 CHART_CARD_KEYS = ("chart_card_a", "chart_card_b", "chart_card_c")
 CHART_BUTTON_KEYS = ("select_chart_a", "select_chart_b", "select_chart_c")
+ANSWER_LABELS = (*CHART_TITLES, CASH_OPTION_LABEL)
 RESULT_CHART_CARD_KEYS = (
     "result_chart_card_a",
     "result_chart_card_b",
@@ -130,12 +132,13 @@ def _is_valid_session_state() -> bool:
         return (
             not st.session_state.submitted
             and st.session_state.selected_label is None
+            and st.session_state.answer_choice in (None, *ANSWER_LABELS)
             and answered_count == question_number - 1
         )
     if current_view == "result":
         return (
             st.session_state.submitted
-            and st.session_state.selected_label is not None
+            and st.session_state.selected_label in ANSWER_LABELS
             and st.session_state.answer_choice
             == st.session_state.selected_label
             and answered_count == question_number
@@ -143,7 +146,7 @@ def _is_valid_session_state() -> bool:
     if current_view == "challenge_result":
         return (
             st.session_state.submitted
-            and st.session_state.selected_label is not None
+            and st.session_state.selected_label in ANSWER_LABELS
             and st.session_state.answer_choice
             == st.session_state.selected_label
             and question_number == CHALLENGE_TOTAL_QUESTIONS
@@ -420,6 +423,35 @@ def render_global_styles() -> None:
             padding: 14px 18px;
             color: #475569;
             font-weight: 650;
+        }
+
+        .technical-comment-card {
+            background: #FFFFFF;
+            border: 1px solid #BFDBFE;
+            border-radius: 14px;
+            padding: 18px 20px;
+            box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+            margin: 16px 0;
+            text-align: left;
+        }
+
+        .technical-comment-title {
+            color: var(--text);
+            font-size: 1.05rem;
+            font-weight: 850;
+        }
+
+        .technical-comment-note {
+            color: var(--muted);
+            font-size: 0.8rem;
+            margin-top: 3px;
+        }
+
+        .technical-comment-body {
+            color: #334155;
+            font-size: 0.98rem;
+            line-height: 1.7;
+            margin-top: 12px;
         }
 
         .metric-grid {
@@ -779,8 +811,12 @@ def main() -> None:
             action_key = (
                 "show_challenge_result" if is_last_question else "next_question"
             )
-        except Exception as e:
-            st.exception(e)
+            technical_comment = generate_technical_comment(
+                question,
+                answer_value,
+            )
+        except Exception:
+            st.error(RESULT_ERROR_MESSAGE)
             return
 
         st.header("🏆 結果発表")
@@ -848,6 +884,21 @@ def main() -> None:
                     f'<div class="cash-explanation">💡 {escape(cash_result_text)}</div>',
                     unsafe_allow_html=True,
                 )
+
+        st.markdown(
+            f"""
+            <div class="technical-comment-card">
+                <div class="technical-comment-title">🤖 AIひとこと解説</div>
+                <div class="technical-comment-note">
+                    価格・出来高・移動平均線から自動生成したルールベース解説です。
+                </div>
+                <div class="technical-comment-body">
+                    {escape(technical_comment)}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         with st.expander("📈 テクニカル表示", expanded=False):
             technical_columns = st.columns(3)
