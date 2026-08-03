@@ -10,12 +10,12 @@ QuestionScreen をゲームらしいレイアウトへ発展させ、今後 Pyth
 
 ## 背景
 
+Task019 でホーム画面と問題画面の画面遷移が完成した。
+本Taskではダミーデータを用いて問題画面の UI を完成させる。
+
 ## 前提条件
 
 - Task019（ホーム画面 → 問題画面の画面遷移）が完了していること。
-
-Task019 でホーム画面と問題画面の画面遷移が完成した。
-本Taskではダミーデータを用いて問題画面の UI を完成させる。
 
 ## 実装内容
 
@@ -31,6 +31,7 @@ Task019 でホーム画面と問題画面の画面遷移が完成した。
 - frontend/lib/widgets/chart_card.dart
 - frontend/lib/widgets/answer_button.dart
 - frontend/lib/models/question.dart
+- frontend/test/widget_test.dart
 
 ## 変更対象外
 
@@ -111,6 +112,14 @@ API通信・JSON変換・永続化は実装しない。
 - 選択状態は保持しない
 - ボタンは有効状態を維持する
 
+## テスト仕様
+
+- HomeScreenからQuestionScreenへ遷移できることを確認する
+- AppBarに「Question 1 / 10」が表示されることを確認する
+- Chart A、Chart B、Chart Cが表示されることを確認する
+- 回答ボタン4件と「現金保有」が表示されることを確認する
+- Task020以前の旧画面文言は期待しない
+
 ## 受け入れ条件
 
 - Question 1 / 10 が表示される
@@ -133,6 +142,7 @@ API通信・JSON変換・永続化は実装しない。
 - エラーなく起動する
 - HomeScreenへ戻れる
 - flutter test が成功する
+- widget_test.dart がTask020仕様に基づいて成功する
 - Overflowが発生しない
 
 ## 完了条件
