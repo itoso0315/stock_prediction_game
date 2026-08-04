@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stock_trainer_flutter/main.dart';
+import 'package:stock_trainer_flutter/repositories/question_repository.dart';
 import 'package:stock_trainer_flutter/widgets/answer_button.dart';
 import 'package:stock_trainer_flutter/widgets/chart_card.dart';
 
 void main() {
-  testWidgets('Task024で回答履歴を記録して結果画面に回答数を表示できる', (tester) async {
+  test('Task025でQuestionの正解ラベルが選択肢に含まれている', () {
+    final questions = const QuestionRepository().getQuestions();
+
+    for (final question in questions) {
+      expect(question.correctAnswerLabel, isNotEmpty);
+      expect(question.answerLabels, contains(question.correctAnswerLabel));
+    }
+  });
+
+  testWidgets('Task025で正解情報追加後もゲーム進行できる', (tester) async {
     await tester.pumpWidget(const StockTrainerApp());
 
     expect(find.text('ゲーム開始'), findsOneWidget);

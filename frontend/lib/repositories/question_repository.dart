@@ -10,18 +10,21 @@ class QuestionRepository {
         totalQuestions: 10,
         chartLabels: ['Chart A', 'Chart B', 'Chart C'],
         answerLabels: ['Chart A', 'Chart B', 'Chart C', '現金保有'],
+        correctAnswerLabel: 'Chart A',
       ),
       Question(
         currentNumber: 2,
         totalQuestions: 10,
         chartLabels: ['Chart A', 'Chart B', 'Chart C'],
         answerLabels: ['Chart A', 'Chart B', 'Chart C', '現金保有'],
+        correctAnswerLabel: 'Chart B',
       ),
       Question(
         currentNumber: 3,
         totalQuestions: 10,
         chartLabels: ['Chart A', 'Chart B', 'Chart C'],
         answerLabels: ['Chart A', 'Chart B', 'Chart C', '現金保有'],
+        correctAnswerLabel: 'Chart C',
       ),
     ];
   }
