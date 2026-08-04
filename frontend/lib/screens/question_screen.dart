@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/answer_record.dart';
 
 import '../repositories/question_repository.dart';
 import 'result_screen.dart';
@@ -15,12 +16,23 @@ class QuestionScreen extends StatefulWidget {
 class _QuestionScreenState extends State<QuestionScreen> {
   final _questions = const QuestionRepository().getQuestions();
   var _currentIndex = 0;
+  final _answerRecords = <AnswerRecord>[];
 
-  void _goToNextQuestion() {
+  void _goToNextQuestion(String selectedAnswerLabel) {
+    final question = _questions[_currentIndex];
+    _answerRecords.add(
+      AnswerRecord(
+        questionNumber: question.currentNumber,
+        selectedAnswerLabel: selectedAnswerLabel,
+      ),
+    );
+
     if (_currentIndex >= _questions.length - 1) {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (context) => const ResultScreen()));
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ResultScreen(answerRecords: _answerRecords),
+        ),
+      );
       return;
     }
 
@@ -65,7 +77,8 @@ class _QuestionScreenState extends State<QuestionScreen> {
                     ) ...[
                       AnswerButton(
                         label: question.answerLabels[index],
-                        onPressed: _goToNextQuestion,
+                        onPressed: () =>
+                            _goToNextQuestion(question.answerLabels[index]),
                       ),
                       if (index < question.answerLabels.length - 1)
                         const SizedBox(height: 12),

@@ -5,7 +5,7 @@ import 'package:stock_trainer_flutter/widgets/answer_button.dart';
 import 'package:stock_trainer_flutter/widgets/chart_card.dart';
 
 void main() {
-  testWidgets('Task023で最後の問題回答後に結果画面へ遷移できる', (tester) async {
+  testWidgets('Task024で回答履歴を記録して結果画面に回答数を表示できる', (tester) async {
     await tester.pumpWidget(const StockTrainerApp());
 
     expect(find.text('ゲーム開始'), findsOneWidget);
@@ -46,6 +46,7 @@ void main() {
 
     expect(find.text('結果発表'), findsOneWidget);
     expect(find.text('ゲーム終了です'), findsOneWidget);
+    expect(find.text('回答数: 3件'), findsOneWidget);
     expect(find.text('ホームへ戻る'), findsOneWidget);
     expect(find.text('ゲーム開始'), findsNothing);
 
