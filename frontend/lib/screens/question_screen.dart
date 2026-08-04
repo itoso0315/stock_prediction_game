@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../repositories/question_repository.dart';
+import 'result_screen.dart';
 import '../widgets/answer_button.dart';
 import '../widgets/chart_card.dart';
 
@@ -17,6 +18,9 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
   void _goToNextQuestion() {
     if (_currentIndex >= _questions.length - 1) {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => const ResultScreen()));
       return;
     }
 
