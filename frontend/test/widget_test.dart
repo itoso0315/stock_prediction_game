@@ -15,7 +15,7 @@ void main() {
     }
   });
 
-  testWidgets('Task025で正解情報追加後もゲーム進行できる', (tester) async {
+  testWidgets('Task029で結果画面に評価ランクを表示できる', (tester) async {
     await tester.pumpWidget(const StockTrainerApp());
 
     expect(find.text('ゲーム開始'), findsOneWidget);
@@ -38,8 +38,8 @@ void main() {
       isTrue,
     );
 
-    await tester.ensureVisible(find.text('現金保有'));
-    await tester.tap(find.text('現金保有'));
+    await tester.ensureVisible(find.text('Chart A').last);
+    await tester.tap(find.text('Chart A').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Question 2 / 10'), findsOneWidget);
@@ -57,9 +57,23 @@ void main() {
     expect(find.text('結果発表'), findsOneWidget);
     expect(find.text('ゲーム終了です'), findsOneWidget);
     expect(find.text('回答数: 3件'), findsOneWidget);
+    expect(find.text('正解数: 1問'), findsOneWidget);
+    expect(find.text('正答率: 33%'), findsOneWidget);
+    expect(find.text('ランク: C'), findsOneWidget);
+    expect(find.text('Q1'), findsOneWidget);
+    expect(find.text('選択: Chart A'), findsOneWidget);
+    expect(find.text('正解: Chart A'), findsOneWidget);
+    expect(find.text('結果: 正解'), findsOneWidget);
+    expect(find.text('Q2'), findsOneWidget);
+    expect(find.text('選択: 現金保有'), findsNWidgets(2));
+    expect(find.text('正解: Chart B'), findsOneWidget);
+    expect(find.text('結果: 不正解'), findsNWidgets(2));
+    expect(find.text('Q3'), findsOneWidget);
+    expect(find.text('正解: Chart C'), findsOneWidget);
     expect(find.text('ホームへ戻る'), findsOneWidget);
     expect(find.text('ゲーム開始'), findsNothing);
 
+    await tester.ensureVisible(find.text('ホームへ戻る'));
     await tester.tap(find.text('ホームへ戻る'));
     await tester.pumpAndSettle();
 

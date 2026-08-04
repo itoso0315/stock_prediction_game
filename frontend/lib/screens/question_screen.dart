@@ -30,7 +30,10 @@ class _QuestionScreenState extends State<QuestionScreen> {
     if (_currentIndex >= _questions.length - 1) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => ResultScreen(answerRecords: _answerRecords),
+          builder: (context) => ResultScreen(
+            answerRecords: _answerRecords,
+            questions: _questions,
+          ),
         ),
       );
       return;
