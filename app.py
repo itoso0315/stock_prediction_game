@@ -1036,7 +1036,25 @@ def main() -> None:
                         """,
                         unsafe_allow_html=True,
                     )
-                    st.plotly_chart(figure, use_container_width=True)
+                    st.plotly_chart(
+                        figure,
+                        use_container_width=True,
+                        config={
+                            "displaylogo": False,
+                            "modeBarButtonsToRemove": [
+                                "toImage",
+                                "zoom2d",
+                                "zoomIn2d",
+                                "zoomOut2d",
+                                "select2d",
+                                "lasso2d",
+                                "autoScale2d",
+                                "toggleSpikelines",
+                                "hoverClosestCartesian",
+                                "hoverCompareCartesian",
+                            ],
+                        },
+                    )
 
         _, next_button_column, _ = st.columns([1, 0.7, 1])
         with next_button_column:
@@ -1145,7 +1163,25 @@ def main() -> None:
         with column:
             with st.container(key=card_key):
                 st.subheader(chart.label)
-                st.plotly_chart(figure, use_container_width=True)
+                st.plotly_chart(
+                    figure,
+                    use_container_width=True,
+                    config={
+                        "displaylogo": False,
+                        "modeBarButtonsToRemove": [
+                            "toImage",
+                            "zoom2d",
+                            "zoomIn2d",
+                            "zoomOut2d",
+                            "select2d",
+                            "lasso2d",
+                            "autoScale2d",
+                            "toggleSpikelines",
+                            "hoverClosestCartesian",
+                            "hoverCompareCartesian",
+                        ],
+                    },
+                )
 
     st.markdown(
         '<div class="section-card"><div class="selection-heading">'

@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
+
 def _get_dates(price_df):
     """Return chart dates from a Date column or the DataFrame index."""
     if "Date" in price_df.columns:
@@ -10,12 +11,20 @@ def _get_dates(price_df):
     return price_df.index
 
 
+# Helper to get non-trading calendar days
+def _non_trading_days(price_df):
+    """Return calendar dates that are absent from the price data."""
+    dates = pd.DatetimeIndex(pd.to_datetime(_get_dates(price_df))).normalize()
+    if dates.empty:
+        return []
+    calendar_days = pd.date_range(dates.min(), dates.max(), freq="D")
+    return calendar_days.difference(dates).tolist()
+
+
 def _volume_colors(price_df):
-    """Return red/green volume colors matching bullish/bearish candles."""
-    return [
-        "red" if close >= open_price else "green"
-        for open_price, close in zip(price_df["Open"], price_df["Close"])
-    ]
+    """Return a single blue color for all volume bars."""
+    return ["#2563EB"] * len(price_df)
+
 
 def create_candlestick_chart(
     price_df,
@@ -116,10 +125,22 @@ def create_candlestick_chart(
         margin=dict(l=0, r=0, t=30, b=0),
         height=430,
     )
+    fig.update_xaxes(rangebreaks=[dict(values=_non_trading_days(price_df))])
     fig.update_xaxes(title_text="Date", row=2, col=1)
-    fig.update_yaxes(title_text="Price", row=1, col=1)
-    fig.update_yaxes(title_text="Volume", row=2, col=1)
+    fig.update_yaxes(
+        title_text="Price",
+        row=1,
+        col=1,
+        showticklabels=False,
+    )
+    fig.update_yaxes(
+        title_text="Volume",
+        row=2,
+        col=1,
+        showticklabels=False,
+    )
     return fig
+
 
 def create_review_chart(
     display_data,
@@ -142,7 +163,6 @@ def create_review_chart(
         vertical_spacing=0.04,
         row_heights=[0.78, 0.22],
     )
-    # Historical data
     fig.add_trace(
         go.Candlestick(
             x=_get_dates(display_data),
@@ -160,7 +180,6 @@ def create_review_chart(
         row=1,
         col=1,
     )
-    # Future data
     fig.add_trace(
         go.Candlestick(
             x=_get_dates(future_data),
@@ -178,9 +197,6 @@ def create_review_chart(
         row=1,
         col=1,
     )
-    # Moving averages on the combined data
-    # Keep the original date index when Date is stored in the index. Resetting it
-    # makes Plotly interpret the moving-average x values as epoch-based dates.
     combined = pd.concat([display_data, future_data])
     if show_ma25:
         ma25 = combined["Close"].rolling(window=25).mean()
@@ -234,7 +250,6 @@ def create_review_chart(
             row=2,
             col=1,
         )
-    # Optionally, add a vertical line for base_date
     if base_date is not None:
         display_dates = _get_dates(display_data)
         past_start = (
@@ -258,16 +273,6 @@ def create_review_chart(
             row="all",
             col=1,
         )
-        fig.add_annotation(
-            x=base_date,
-            y=1,
-            xref="x",
-            yref="y domain",
-            text="予想時点",
-            showarrow=False,
-            xanchor="right",
-            yanchor="bottom",
-        )
     fig.update_layout(
         title=title,
         xaxis_rangeslider_visible=False,
@@ -281,7 +286,18 @@ def create_review_chart(
         margin=dict(l=0, r=0, t=30, b=0),
         height=430,
     )
+    fig.update_xaxes(rangebreaks=[dict(values=_non_trading_days(combined))])
     fig.update_xaxes(title_text="Date", row=2, col=1)
-    fig.update_yaxes(title_text="Price", row=1, col=1)
-    fig.update_yaxes(title_text="Volume", row=2, col=1)
+    fig.update_yaxes(
+        title_text="Price",
+        row=1,
+        col=1,
+        showticklabels=True,
+    )
+    fig.update_yaxes(
+        title_text="Volume",
+        row=2,
+        col=1,
+        showticklabels=True,
+    )
     return fig
