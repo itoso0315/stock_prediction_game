@@ -5,7 +5,7 @@ import 'package:stock_trainer_flutter/widgets/answer_button.dart';
 import 'package:stock_trainer_flutter/widgets/chart_card.dart';
 
 void main() {
-  testWidgets('Task020の問題画面を表示し、HomeScreenへ戻れる', (tester) async {
+  testWidgets('Task022で回答後に次の問題へ進める', (tester) async {
     await tester.pumpWidget(const StockTrainerApp());
 
     expect(find.text('ゲーム開始'), findsOneWidget);
@@ -27,6 +27,24 @@ void main() {
           .every((button) => button.onPressed != null),
       isTrue,
     );
+
+    await tester.ensureVisible(find.text('現金保有'));
+    await tester.tap(find.text('現金保有'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Question 2 / 10'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('現金保有'));
+    await tester.tap(find.text('現金保有'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Question 3 / 10'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('現金保有'));
+    await tester.tap(find.text('現金保有'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Question 3 / 10'), findsOneWidget);
     expect(find.text('ゲーム開始'), findsNothing);
 
     await tester.pageBack();

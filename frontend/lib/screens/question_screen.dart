@@ -1,25 +1,38 @@
 import 'package:flutter/material.dart';
 
-import '../models/question.dart';
+import '../repositories/question_repository.dart';
 import '../widgets/answer_button.dart';
 import '../widgets/chart_card.dart';
 
-class QuestionScreen extends StatelessWidget {
+class QuestionScreen extends StatefulWidget {
   const QuestionScreen({super.key});
 
-  static const Question _question = Question(
-    currentNumber: 1,
-    totalQuestions: 10,
-    chartLabels: ['Chart A', 'Chart B', 'Chart C'],
-    answerLabels: ['Chart A', 'Chart B', 'Chart C', '現金保有'],
-  );
+  @override
+  State<QuestionScreen> createState() => _QuestionScreenState();
+}
+
+class _QuestionScreenState extends State<QuestionScreen> {
+  final _questions = const QuestionRepository().getQuestions();
+  var _currentIndex = 0;
+
+  void _goToNextQuestion() {
+    if (_currentIndex >= _questions.length - 1) {
+      return;
+    }
+
+    setState(() {
+      _currentIndex++;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final question = _questions[_currentIndex];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Question ${_question.currentNumber} / ${_question.totalQuestions}',
+          'Question ${question.currentNumber} / ${question.totalQuestions}',
         ),
         centerTitle: true,
       ),
@@ -34,23 +47,23 @@ class QuestionScreen extends StatelessWidget {
                   children: [
                     for (
                       var index = 0;
-                      index < _question.chartLabels.length;
+                      index < question.chartLabels.length;
                       index++
                     ) ...[
-                      ChartCard(label: _question.chartLabels[index]),
-                      if (index < _question.chartLabels.length - 1)
+                      ChartCard(label: question.chartLabels[index]),
+                      if (index < question.chartLabels.length - 1)
                         const SizedBox(height: 16),
                     ],
                     for (
                       var index = 0;
-                      index < _question.answerLabels.length;
+                      index < question.answerLabels.length;
                       index++
                     ) ...[
                       AnswerButton(
-                        label: _question.answerLabels[index],
-                        onPressed: () {},
+                        label: question.answerLabels[index],
+                        onPressed: _goToNextQuestion,
                       ),
-                      if (index < _question.answerLabels.length - 1)
+                      if (index < question.answerLabels.length - 1)
                         const SizedBox(height: 12),
                     ],
                   ],
