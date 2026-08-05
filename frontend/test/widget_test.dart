@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stock_trainer_flutter/main.dart';
 import 'package:stock_trainer_flutter/repositories/question_repository.dart';
-import 'package:stock_trainer_flutter/widgets/answer_button.dart';
 import 'package:stock_trainer_flutter/widgets/chart_card.dart';
 
 void main() {
@@ -15,7 +14,7 @@ void main() {
     }
   });
 
-  testWidgets('Task029で結果画面に評価ランクを表示できる', (tester) async {
+  testWidgets('Task031で説明文つきQuestionScreenから回答できる', (tester) async {
     await tester.pumpWidget(const StockTrainerApp());
 
     expect(find.text('ゲーム開始'), findsOneWidget);
@@ -24,34 +23,70 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Question 1 / 10'), findsOneWidget);
+    expect(
+      find.text('6か月分のチャートを見て、1か月後の評価日に最も騰落率が高い選択肢を選んでください。'),
+      findsOneWidget,
+    );
+    expect(find.text('銘柄名は隠されています。チャートの形だけで判断しましょう。'), findsOneWidget);
     expect(find.byType(ChartCard), findsNWidgets(3));
-    expect(find.byType(AnswerButton), findsNWidgets(4));
     expect(find.text('Chart A'), findsNWidgets(2));
     expect(find.text('Chart B'), findsNWidgets(2));
     expect(find.text('Chart C'), findsNWidgets(2));
     expect(find.text('現金保有'), findsOneWidget);
+    expect(find.text('回答する'), findsOneWidget);
     expect(find.byType(SingleChildScrollView), findsOneWidget);
     expect(
       tester
-          .widgetList<FilledButton>(find.byType(FilledButton))
-          .every((button) => button.onPressed != null),
-      isTrue,
+          .widget<FilledButton>(find.widgetWithText(FilledButton, '回答する'))
+          .onPressed,
+      isNull,
     );
 
     await tester.ensureVisible(find.text('Chart A').last);
     await tester.tap(find.text('Chart A').last);
     await tester.pumpAndSettle();
 
+    expect(
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, '回答する'))
+          .onPressed,
+      isNotNull,
+    );
+
+    await tester.ensureVisible(find.text('回答する'));
+    await tester.tap(find.text('回答する'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Question 2 / 10'), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, '回答する'))
+          .onPressed,
+      isNull,
+    );
 
     await tester.ensureVisible(find.text('現金保有'));
     await tester.tap(find.text('現金保有'));
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.text('回答する'));
+    await tester.tap(find.text('回答する'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Question 3 / 10'), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, '回答する'))
+          .onPressed,
+      isNull,
+    );
 
     await tester.ensureVisible(find.text('現金保有'));
     await tester.tap(find.text('現金保有'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('回答する'));
+    await tester.tap(find.text('回答する'));
     await tester.pumpAndSettle();
 
     expect(find.text('結果発表'), findsOneWidget);
