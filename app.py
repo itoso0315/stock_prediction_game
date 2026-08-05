@@ -1,7 +1,8 @@
 
 """Stock TrainerのStreamlitエントリーポイント。"""
-
+import random
 from html import escape
+from typing import Any
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -18,6 +19,13 @@ from game.question_generator import (
     select_random_tickers,
 )
 from ui.charts import create_candlestick_chart, create_review_chart
+from ui.result_screen import (
+    render_result_summary_cards,
+    render_cash_result,
+    render_ai_comment,
+    render_recommended_book,
+    render_result_charts,
+)
 
 
 CHART_TITLES = ("Chart A", "Chart B", "Chart C")
@@ -28,6 +36,36 @@ RESULT_CHART_CARD_KEYS = (
     "result_chart_card_a",
     "result_chart_card_b",
     "result_chart_card_c",
+)
+
+RECOMMENDED_BOOKS = (
+    {
+        "title": (
+            "2000億円超を運用した伝説のファンドマネジャーの "
+            "株トレ 世界一楽しい「一問一答」株の教科書"
+        ),
+        "author": "窪田 真之",
+        "image": "assets/kabutore.jpg",
+        "url": "https://link.amazon/B04Md0kbt",
+    },
+    {
+        "title": (
+            "2000億円超を運用した伝説のファンドマネジャーの "
+            "株トレ ファンダメンタルズ編"
+        ),
+        "author": "窪田 真之",
+        "image": "assets/kabutore2.jpg",
+        "url": "https://link.amazon/B0ihXx6zR",
+    },
+    {
+        "title": (
+            "メガ盛「株ドリル」億を儲けた"
+            "“鬼神プロトレーダーの技術”全部のせ"
+        ),
+        "author": "元機関投資家トレーダー堀江",
+        "image": "assets/megamori.jpg",
+        "url": "https://link.amazon/B06EKbeWT",
+    },
 )
 ERROR_MESSAGE = "問題データを生成できませんでした。時間をおいて再度お試しください。"
 RESULT_ERROR_MESSAGE = "結果を表示できませんでした。時間をおいて再度お試しください。"
@@ -42,6 +80,18 @@ CHALLENGE_RESULT_ERROR_MESSAGE = (
 )
 CHALLENGE_TOTAL_QUESTIONS = 10
 CHALLENGE_TARGET_CORRECT = 7
+QUESTION_RETURN_PATTERNS = (
+    "one_positive",
+    "two_positive",
+    "all_negative",
+    "one_positive",
+    "two_positive",
+    "one_positive",
+    "all_negative",
+    "two_positive",
+    "one_positive",
+    "all_negative",
+)
 CHALLENGE_STATE_KEYS = (
     "challenge_question_number",
     "challenge_correct_count",
@@ -61,11 +111,17 @@ def _generate_question_with_figures(
     show_ma25: bool,
     show_ma50: bool,
     show_ma75: bool,
+    question_number: int = 1,
 ) -> GameQuestion:
     """株価取得に失敗した場合は、別の銘柄で再試行する。"""
     last_error: Exception | None = None
+    pattern_order = st.session_state.get(
+        "challenge_pattern_order",
+        list(QUESTION_RETURN_PATTERNS),
+    )
+    target_pattern = pattern_order[question_number - 1]
 
-    for _ in range(5):
+    for _ in range(20):
         selected_tickers = select_random_tickers(NIKKEI_225_TICKERS)
 
         try:
@@ -74,6 +130,11 @@ def _generate_question_with_figures(
                 for ticker in selected_tickers
             )
             question = generate_game_question(selected_tickers, price_frames)
+            returns = tuple(
+                chart.future_return_percent for chart in question.charts
+            )
+            if not _matches_return_pattern(returns, target_pattern):
+                continue
             tuple(
                 create_candlestick_chart(
                     chart.display_data,
@@ -89,13 +150,17 @@ def _generate_question_with_figures(
             last_error = error
 
     raise ValueError(
-        "株価データの取得に複数回失敗しました。"
+        "指定した騰落率パターンの問題を生成できませんでした。"
     ) from last_error
 
 
 def _initial_challenge_state(question: GameQuestion) -> dict[str, object]:
     """新しい10問チャレンジの初期状態を返す。"""
     return {
+        "challenge_pattern_order": random.sample(
+            list(QUESTION_RETURN_PATTERNS),
+            len(QUESTION_RETURN_PATTERNS),
+        ),
         "game_question": question,
         "answer_choice": None,
         "selected_label": None,
@@ -111,6 +176,67 @@ def _initial_challenge_state(question: GameQuestion) -> dict[str, object]:
 def _is_plain_int(value: object) -> bool:
     """boolを除くintかどうかを返す。"""
     return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _matches_return_pattern(
+    returns: tuple[float, ...],
+    target_pattern: str,
+) -> bool:
+    """騰落率の組み合わせが指定パターンに一致するか返す。"""
+    positive_count = sum(value > 0 for value in returns)
+    negative_count = sum(value < 0 for value in returns)
+
+    return (
+        target_pattern == "one_positive"
+        and positive_count == 1
+        and negative_count == 2
+    ) or (
+        target_pattern == "two_positive"
+        and positive_count == 2
+        and negative_count == 1
+    ) or (
+        target_pattern == "all_negative"
+        and negative_count == 3
+    )
+
+
+def _get_recommended_book(question_number: int) -> dict[str, str]:
+    """問題番号に応じたおすすめ本を返す。"""
+    return RECOMMENDED_BOOKS[
+        (question_number - 1) % len(RECOMMENDED_BOOKS)
+    ]
+
+
+def _get_result_judgement(
+    question: GameQuestion,
+    answer_value: str,
+) -> tuple[bool, bool, str, str]:
+    """回答結果の判定を返す。"""
+    is_correct = answer_value == question.correct_label
+
+    selected_chart = next(
+        (
+            chart
+            for chart in question.charts
+            if chart.label == answer_value
+        ),
+        None,
+    )
+
+    is_partial = (
+        not is_correct
+        and selected_chart is not None
+        and selected_chart.future_return_percent >= 0
+    )
+
+    if is_correct:
+        return True, False, "正解", "○"
+
+    if is_partial:
+        return False, True, "おしい", "△"
+
+    return False, False, "不正解", "×"
+
 
 
 def _scroll_page_to_top() -> None:
@@ -218,6 +344,7 @@ def initialize_session_state(
                 show_ma25,
                 show_ma50,
                 show_ma75,
+                question_number=1,
             )
         except Exception as error:
             raise _ChallengeStartError from error
@@ -241,6 +368,7 @@ def normalize_session_state(
             show_ma25,
             show_ma50,
             show_ma75,
+            question_number=1,
         )
     except Exception as error:
         raise _ChallengeInitializationError from error
@@ -416,6 +544,11 @@ def render_global_styles() -> None:
             border: 2px solid #EF4444;
         }
 
+        .result-status-partial {
+            background: var(--warning-soft);
+            border: 2px solid #F59E0B;
+        }
+
         .answer-summary {
             background: #F8FAFC;
             border: 1px solid #CBD5E1;
@@ -446,6 +579,10 @@ def render_global_styles() -> None:
 
         .status-incorrect {
             color: var(--danger);
+        }
+
+        .status-partial {
+            color: var(--warning);
         }
 
         .summary-main {
@@ -480,6 +617,7 @@ def render_global_styles() -> None:
             padding: 14px 18px;
             font-weight: 750;
             color: var(--text);
+            margin-top: 12px;
         }
 
         .cash-explanation {
@@ -489,6 +627,7 @@ def render_global_styles() -> None:
             padding: 14px 18px;
             color: #475569;
             font-weight: 650;
+            margin-top: 12px;
         }
 
         .technical-comment-card {
@@ -518,6 +657,86 @@ def render_global_styles() -> None:
             font-size: 0.98rem;
             line-height: 1.7;
             margin-top: 12px;
+        }
+
+        .recommended-book-card {
+            background: #FFFFFF;
+            border: 1px solid #F3D08A;
+            border-radius: 16px;
+            padding: 20px 22px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+            margin: 16px 0;
+            text-align: center;
+        }
+
+        .recommended-book-title {
+            color: var(--text);
+            font-size: 1.2rem;
+            font-weight: 850;
+            margin-bottom: 6px;
+        }
+
+        .recommended-book-subtitle {
+            color: #334155;
+            font-size: 0.98rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+
+        
+
+        .recommended-book-details {
+            text-align: left;
+            padding: 6px 4px;
+        }
+
+        .recommended-book-name {
+            color: var(--text);
+            font-size: 1.1rem;
+            font-weight: 900;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .recommended-book-author {
+            color: var(--muted);
+            font-size: 0.92rem;
+            margin-bottom: 14px;
+        }
+
+        .recommended-book-description {
+            color: #334155;
+            font-size: 0.95rem;
+            line-height: 1.65;
+            margin-bottom: 12px;
+        }
+
+        .recommended-book-rating {
+            color: #F59E0B;
+            font-size: 1.05rem;
+            letter-spacing: 0.08rem;
+            margin-bottom: 12px;
+        }
+
+        .affiliate-disclosure {
+            color: var(--muted);
+            font-size: 0.75rem;
+            margin-top: 10px;
+        }
+
+        .st-key-amazon_book_link a {
+            background: #FF9900;
+            color: #111827;
+            border: none;
+            border-radius: 10px;
+            min-height: 46px;
+            font-weight: 850;
+            justify-content: center;
+        }
+
+        .st-key-amazon_book_link a:hover {
+            background: #F59E0B;
+            color: #111827;
         }
 
         .metric-grid {
@@ -831,6 +1050,7 @@ def main() -> None:
                         show_ma25,
                         show_ma50,
                         show_ma75,
+                        question_number=1,
                     )
                 except Exception:
                     st.error(ERROR_MESSAGE)
@@ -875,11 +1095,20 @@ def main() -> None:
             yahoo_chart_urls = tuple(
                 create_yahoo_chart_url(chart.ticker) for chart in question.charts
             )
+
             answer_value = st.session_state.selected_label
             correct_value = question.correct_label
-            is_correct = answer_value == correct_value
-            result_text = "正解" if is_correct else "不正解"
-            result_icon = "🎉" if is_correct else "☹"
+
+            (
+                is_correct,
+                is_partial,
+                result_text,
+                result_icon,
+            ) = _get_result_judgement(
+                question,
+                answer_value,
+            )
+            
             cash_result_text = (
                 "3つのChartがすべて0%以下だったため、現金保有が最も良い結果でした。"
                 if question.correct_label == CASH_OPTION_LABEL
@@ -903,6 +1132,8 @@ def main() -> None:
                 question,
                 answer_value,
             )
+            recommended_book = _get_recommended_book(question_number)
+
         except Exception:
             st.error(RESULT_ERROR_MESSAGE)
             return
@@ -911,82 +1142,21 @@ def main() -> None:
         render_progress_cards(result_progress_items)
         render_date_card(base_date_text, evaluation_date_text)
 
-        result_column, answer_column, correct_column = st.columns(
-            [1.05, 0.95, 1.05], gap="medium"
+        render_result_summary_cards(
+            is_correct=is_correct,
+            is_partial=is_partial,
+            correct_label=question.correct_label,
+            cash_option_label=CASH_OPTION_LABEL,
+            result_icon=result_icon,
+            result_text=result_text,
+            answer_value=answer_value,
         )
-        status_class = (
-            "result-status-correct" if is_correct else "result-status-incorrect"
-        )
-        status_text_class = "status-correct" if is_correct else "status-incorrect"
-        answer_text_class = "answer-right" if is_correct else "answer-wrong"
-        detail_text = (
-            "素晴らしい判断でした！"
-            if is_correct
-            else (
-                "現金で保有が最も良い結果でした。"
-                if question.correct_label == CASH_OPTION_LABEL
-                else f"{question.correct_label}が最も良い結果でした。"
-            )
-        )
-        with result_column:
-            st.markdown(
-                f"""
-                <div class="result-summary-card {status_class}">
-                    <div class="summary-label">結果</div>
-                    <div class="status-main {status_text_class}">{result_icon} {escape(result_text)}</div>
-                    <div class="status-detail">{escape(detail_text)}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        with answer_column:
-            st.markdown(
-                f"""
-                <div class="result-summary-card answer-summary">
-                    <div class="summary-label">あなたの回答</div>
-                    <div class="summary-main {answer_text_class}">{escape(str(answer_value))}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        with correct_column:
-            st.markdown(
-                f"""
-                <div class="result-summary-card correct-summary">
-                    <div class="summary-label">正解</div>
-                    <div class="summary-main answer-right">{escape(str(correct_value))}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
 
-        cash_column, explanation_column = st.columns([1, 2], gap="small")
-        with cash_column:
-            st.markdown(
-                '<div class="cash-strip">💵 現金で保有：0.00%</div>',
-                unsafe_allow_html=True,
-            )
-        with explanation_column:
-            if cash_result_text is not None:
-                st.markdown(
-                    f'<div class="cash-explanation">💡 {escape(cash_result_text)}</div>',
-                    unsafe_allow_html=True,
-                )
+        render_cash_result(cash_result_text)
 
-        st.markdown(
-            f"""
-            <div class="technical-comment-card">
-                <div class="technical-comment-title">🤖 AIひとこと解説</div>
-                <div class="technical-comment-note">
-                    価格・出来高・移動平均線から自動生成したルールベース解説です。
-                </div>
-                <div class="technical-comment-body">
-                    {escape(technical_comment)}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        render_ai_comment(technical_comment)
+
+        render_recommended_book(recommended_book)
 
         moving_averages_visible = show_ma25 and show_ma50 and show_ma75
         st.button(
@@ -999,62 +1169,15 @@ def main() -> None:
             width="stretch",
         )
 
-        result_columns = st.columns(3, gap="small")
-        for column, card_key, chart, figure, comparison, company_text, yahoo_url in zip(
-            result_columns,
-            RESULT_CHART_CARD_KEYS,
-            question.charts,
-            review_figures,
-            comparison_values,
-            company_texts,
-            yahoo_chart_urls,
-            strict=True,
-        ):
-            base_price, future_price, return_percent = comparison
-            return_class = (
-                "metric-positive"
-                if chart.future_return_percent > 0
-                else "metric-negative"
-                if chart.future_return_percent < 0
-                else ""
-            )
-            with column:
-                with st.container(key=card_key):
-                    st.subheader(chart.label)
-                    st.markdown(
-                        f'<div class="chart-company">{escape(company_text)}</div>',
-                        unsafe_allow_html=True,
-                    )
-                    st.link_button("↗ Yahoo!ファイナンスでチャートを見る", yahoo_url)
-                    st.markdown(
-                        f"""
-                        <div class="metric-grid">
-                            <div><div class="metric-label">基準日終値</div><div class="metric-value">{escape(base_price)}</div></div>
-                            <div><div class="metric-label">評価日終値</div><div class="metric-value">{escape(future_price)}</div></div>
-                            <div><div class="metric-label">騰落率</div><div class="metric-value {return_class}">{escape(return_percent)}</div></div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-                    st.plotly_chart(
-                        figure,
-                        use_container_width=True,
-                        config={
-                            "displaylogo": False,
-                            "modeBarButtonsToRemove": [
-                                "toImage",
-                                "zoom2d",
-                                "zoomIn2d",
-                                "zoomOut2d",
-                                "select2d",
-                                "lasso2d",
-                                "autoScale2d",
-                                "toggleSpikelines",
-                                "hoverClosestCartesian",
-                                "hoverCompareCartesian",
-                            ],
-                        },
-                    )
+        render_result_charts(
+            charts=question.charts,
+            review_figures=review_figures,
+            comparison_values=comparison_values,
+            company_texts=company_texts,
+            yahoo_chart_urls=yahoo_chart_urls,
+            result_chart_card_keys=RESULT_CHART_CARD_KEYS,
+            correct_label=question.correct_label,
+        )
 
         _, next_button_column, _ = st.columns([1, 0.7, 1])
         with next_button_column:
@@ -1079,6 +1202,7 @@ def main() -> None:
                             show_ma25,
                             show_ma50,
                             show_ma75,
+                            question_number=question_number + 1,
                         )
                     except Exception:
                         st.error(ERROR_MESSAGE)
