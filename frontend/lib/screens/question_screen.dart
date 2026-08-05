@@ -73,61 +73,77 @@ class _QuestionScreenState extends State<QuestionScreen> {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 24),
-                    Text(
-                      '6か月分のチャートを見て、1か月後の評価日に最も騰落率が高い選択肢を選んでください。',
-                      style: Theme.of(context).textTheme.titleMedium,
-                      textAlign: TextAlign.center,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWideScreen = constraints.maxWidth >= 700;
+            final horizontalPadding = isWideScreen ? 32.0 : 16.0;
+            final contentMaxWidth = isWideScreen ? 720.0 : constraints.maxWidth;
+            final answerButtonMaxWidth = isWideScreen
+                ? 520.0
+                : constraints.maxWidth;
+
+            return SingleChildScrollView(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                      vertical: 16,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '銘柄名は隠されています。チャートの形だけで判断しましょう。',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      textAlign: TextAlign.center,
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 24),
+                        Text(
+                          '6か月分のチャートを見て、1か月後の評価日に最も騰落率が高い選択肢を選んでください。',
+                          style: Theme.of(context).textTheme.titleMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '銘柄名は隠されています。チャートの形だけで判断しましょう。',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        for (
+                          var index = 0;
+                          index < question.answerLabels.length;
+                          index++
+                        ) ...[
+                          _AnswerSelectionCard(
+                            label: question.answerLabels[index],
+                            isSelected:
+                                _selectedAnswerLabel ==
+                                question.answerLabels[index],
+                            onTap: () =>
+                                _selectAnswer(question.answerLabels[index]),
+                          ),
+                          if (index < question.answerLabels.length - 1)
+                            const SizedBox(height: 12),
+                        ],
+                        const SizedBox(height: 24),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: answerButtonMaxWidth,
+                          ),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
+                              onPressed: _selectedAnswerLabel == null
+                                  ? null
+                                  : _confirmAnswer,
+                              child: const Text('回答する'),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    for (
-                      var index = 0;
-                      index < question.answerLabels.length;
-                      index++
-                    ) ...[
-                      _AnswerSelectionCard(
-                        label: question.answerLabels[index],
-                        isSelected:
-                            _selectedAnswerLabel ==
-                            question.answerLabels[index],
-                        onTap: () =>
-                            _selectAnswer(question.answerLabels[index]),
-                      ),
-                      if (index < question.answerLabels.length - 1)
-                        const SizedBox(height: 12),
-                    ],
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: _selectedAnswerLabel == null
-                            ? null
-                            : _confirmAnswer,
-                        child: const Text('回答する'),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
