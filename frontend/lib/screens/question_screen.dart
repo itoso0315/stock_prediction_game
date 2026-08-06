@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../models/answer_record.dart';
-import '../repositories/question_repository.dart';
+import '../models/question.dart';
+import '../repositories/question_api_repository.dart';
 import '../widgets/chart_card.dart';
 import 'answer_review_screen.dart';
 import 'result_screen.dart';
@@ -11,19 +12,25 @@ class QuestionScreen extends StatefulWidget {
     super.key,
     this.initialIndex = 0,
     this.initialAnswerRecords = const [],
+    this.initialQuestions,
+    this.questionRepository,
   });
 
   final int initialIndex;
   final List<AnswerRecord> initialAnswerRecords;
+  final List<Question>? initialQuestions;
+  final QuestionApiRepository? questionRepository;
 
   @override
   State<QuestionScreen> createState() => _QuestionScreenState();
 }
 
 class _QuestionScreenState extends State<QuestionScreen> {
-  final _questions = const QuestionRepository().getQuestions();
+  List<Question>? _questions;
   late int _currentIndex;
   late final List<AnswerRecord> _answerRecords;
+  var _isLoading = true;
+  String? _errorMessage;
   String? _selectedAnswerLabel;
 
   @override
@@ -31,6 +38,43 @@ class _QuestionScreenState extends State<QuestionScreen> {
     super.initState();
     _currentIndex = widget.initialIndex;
     _answerRecords = List<AnswerRecord>.from(widget.initialAnswerRecords);
+
+    final initialQuestions = widget.initialQuestions;
+
+    if (initialQuestions != null) {
+      _questions = initialQuestions;
+      _isLoading = false;
+      return;
+    }
+
+    _loadQuestions();
+  }
+
+  Future<void> _loadQuestions() async {
+    try {
+      final repository =
+          widget.questionRepository ??
+          QuestionApiRepository(baseUrl: 'http://127.0.0.1:8000');
+      final questions = await repository.getQuestions();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _questions = questions;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _errorMessage = '問題データを読み込めませんでした';
+        _isLoading = false;
+      });
+    }
   }
 
   void _selectAnswer(String answerLabel) {
@@ -41,12 +85,13 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
   void _confirmAnswer() {
     final selectedAnswerLabel = _selectedAnswerLabel;
+    final questions = _questions;
 
-    if (selectedAnswerLabel == null) {
+    if (selectedAnswerLabel == null || questions == null) {
       return;
     }
 
-    final question = _questions[_currentIndex];
+    final question = questions[_currentIndex];
     final answerRecord = AnswerRecord(
       questionNumber: question.currentNumber,
       selectedAnswerLabel: selectedAnswerLabel,
@@ -61,8 +106,8 @@ class _QuestionScreenState extends State<QuestionScreen> {
           question: question,
           correctCount: _calculateCorrectCount(),
           answeredCount: _answerRecords.length,
-          totalQuestions: _questions.length,
-          isLastQuestion: _currentIndex >= _questions.length - 1,
+          totalQuestions: questions.length,
+          isLastQuestion: _currentIndex >= questions.length - 1,
           onNext: _goToNextFromReview,
         ),
       ),
@@ -70,10 +115,16 @@ class _QuestionScreenState extends State<QuestionScreen> {
   }
 
   int _calculateCorrectCount() {
+    final questions = _questions;
+
+    if (questions == null) {
+      return 0;
+    }
+
     var correctCount = 0;
 
     for (final answerRecord in _answerRecords) {
-      final question = _questions.firstWhere(
+      final question = questions.firstWhere(
         (question) => question.currentNumber == answerRecord.questionNumber,
       );
 
@@ -86,13 +137,17 @@ class _QuestionScreenState extends State<QuestionScreen> {
   }
 
   void _goToNextFromReview() {
-    if (_currentIndex >= _questions.length - 1) {
+    final questions = _questions;
+
+    if (questions == null) {
+      return;
+    }
+
+    if (_currentIndex >= questions.length - 1) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (context) => ResultScreen(
-            answerRecords: _answerRecords,
-            questions: _questions,
-          ),
+          builder: (context) =>
+              ResultScreen(answerRecords: _answerRecords, questions: questions),
         ),
         (route) => route.isFirst,
       );
@@ -104,6 +159,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
         builder: (context) => QuestionScreen(
           initialIndex: _currentIndex + 1,
           initialAnswerRecords: _answerRecords,
+          initialQuestions: questions,
         ),
       ),
       (route) => route.isFirst,
@@ -112,11 +168,22 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final question = _questions[_currentIndex];
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final errorMessage = _errorMessage;
+
+    if (errorMessage != null) {
+      return Scaffold(body: Center(child: Text(errorMessage)));
+    }
+
+    final questions = _questions!;
+    final question = questions[_currentIndex];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Question ${_currentIndex + 1} / ${_questions.length}'),
+        title: Text('Question ${_currentIndex + 1} / ${questions.length}'),
         centerTitle: true,
       ),
       body: SafeArea(

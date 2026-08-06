@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart';
 
 import '../models/question.dart';
 
@@ -8,16 +8,16 @@ class QuestionJsonRepository {
   const QuestionJsonRepository();
 
   Future<List<Question>> getQuestions() async {
-    final jsonText = await rootBundle.loadString(
+    final jsonString = await rootBundle.loadString(
       'assets/sample_questions.json',
     );
-    final jsonMap = jsonDecode(jsonText) as Map<String, dynamic>;
-    final questionJsonList = jsonMap['questions'] as List<dynamic>;
 
-    return questionJsonList
+    final decoded = jsonDecode(jsonString) as Map<String, dynamic>;
+    final questionsJson = decoded['questions'] as List<dynamic>;
+
+    return questionsJson
         .map(
-          (questionJson) =>
-              Question.fromJson(questionJson as Map<String, dynamic>),
+          (item) => Question.fromJson(item as Map<String, dynamic>),
         )
         .toList();
   }

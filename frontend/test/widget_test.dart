@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:stock_trainer_flutter/main.dart';
+import 'package:stock_trainer_flutter/repositories/question_api_repository.dart';
 import 'package:stock_trainer_flutter/repositories/question_repository.dart';
 import 'package:stock_trainer_flutter/widgets/chart_card.dart';
 
@@ -15,7 +18,58 @@ void main() {
   });
 
   testWidgets('Task035で回答後に1問ごとの結果発表画面を表示できる', (tester) async {
-    await tester.pumpWidget(const StockTrainerApp());
+    final client = MockClient((request) async {
+      expect(request.url.path, '/api/questions');
+
+      return http.Response(
+        '''[
+          {
+            "currentNumber": 1,
+            "totalQuestions": 3,
+            "choices": [
+              {"label": "Chart A", "type": "stock"},
+              {"label": "Chart B", "type": "stock"},
+              {"label": "Chart C", "type": "stock"},
+              {"label": "現金保有", "type": "cash"}
+            ],
+            "correctChoiceLabel": "Chart B"
+          },
+          {
+            "currentNumber": 2,
+            "totalQuestions": 3,
+            "choices": [
+              {"label": "Chart A", "type": "stock"},
+              {"label": "Chart B", "type": "stock"},
+              {"label": "Chart C", "type": "stock"},
+              {"label": "現金保有", "type": "cash"}
+            ],
+            "correctChoiceLabel": "Chart B"
+          },
+          {
+            "currentNumber": 3,
+            "totalQuestions": 3,
+            "choices": [
+              {"label": "Chart A", "type": "stock"},
+              {"label": "Chart B", "type": "stock"},
+              {"label": "Chart C", "type": "stock"},
+              {"label": "現金保有", "type": "cash"}
+            ],
+            "correctChoiceLabel": "Chart C"
+          }
+        ]''',
+        200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
+      );
+    });
+
+    final repository = QuestionApiRepository(
+      baseUrl: 'http://127.0.0.1:8000',
+      client: client,
+    );
+
+    await tester.pumpWidget(
+      StockTrainerApp(questionRepository: repository),
+    );
 
     expect(find.text('ゲーム開始'), findsOneWidget);
 
@@ -134,12 +188,10 @@ void main() {
     expect(find.text('正答率70%を目指しましょう'), findsOneWidget);
     expect(find.text('Q1'), findsOneWidget);
     expect(find.text('選択: Chart A'), findsOneWidget);
-    expect(find.text('正解: Chart A'), findsOneWidget);
-    expect(find.text('結果: 正解'), findsOneWidget);
+    expect(find.text('正解: Chart B'), findsNWidgets(2));
     expect(find.text('Q2'), findsOneWidget);
     expect(find.text('選択: 現金保有'), findsNWidgets(2));
-    expect(find.text('正解: Chart B'), findsOneWidget);
-    expect(find.text('結果: 不正解'), findsNWidgets(2));
+    expect(find.text('結果: 不正解'), findsNWidgets(3));
     expect(find.text('Q3'), findsOneWidget);
     expect(find.text('正解: Chart C'), findsOneWidget);
     expect(find.text('ホームへ戻る'), findsOneWidget);

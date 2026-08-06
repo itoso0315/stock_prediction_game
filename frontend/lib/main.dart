@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'repositories/question_api_repository.dart';
 import 'screens/home_screen.dart';
 
 void main() {
@@ -6,7 +7,12 @@ void main() {
 }
 
 class StockTrainerApp extends StatelessWidget {
-  const StockTrainerApp({super.key});
+  const StockTrainerApp({
+    super.key,
+    this.questionRepository,
+  });
+
+  final QuestionApiRepository? questionRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +72,9 @@ class StockTrainerApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: HomeScreen(
+        questionRepository: questionRepository,
+      ),
     );
   }
 }

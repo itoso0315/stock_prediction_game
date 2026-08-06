@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import '../repositories/question_api_repository.dart';
 import 'question_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    this.questionRepository,
+  });
+
+  final QuestionApiRepository? questionRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -106,8 +112,9 @@ class HomeScreen extends StatelessWidget {
                                 onPressed: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute<void>(
-                                      builder: (context) =>
-                                          const QuestionScreen(),
+                                      builder: (context) => QuestionScreen(
+                                        questionRepository: questionRepository,
+                                      ),
                                     ),
                                   );
                                 },
