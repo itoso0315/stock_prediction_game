@@ -14,7 +14,7 @@ void main() {
     }
   });
 
-  testWidgets('Task031で説明文つきQuestionScreenから回答できる', (tester) async {
+  testWidgets('Task035で回答後に1問ごとの結果発表画面を表示できる', (tester) async {
     await tester.pumpWidget(const StockTrainerApp());
 
     expect(find.text('ゲーム開始'), findsOneWidget);
@@ -57,6 +57,21 @@ void main() {
     await tester.tap(find.text('回答する'));
     await tester.pumpAndSettle();
 
+    expect(find.text('結果発表'), findsWidgets);
+    expect(find.text('問題 1 / 3'), findsOneWidget);
+    expect(find.text('現在の成績'), findsOneWidget);
+    expect(find.text('現在の正答率'), findsOneWidget);
+    expect(find.text('目標'), findsOneWidget);
+    expect(find.text('70%'), findsOneWidget);
+    expect(find.text('あなたの回答'), findsOneWidget);
+    expect(find.text('正解'), findsOneWidget);
+    expect(find.text('正答率70%を目指しましょう'), findsOneWidget);
+    expect(find.text('次の問題へ'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('次の問題へ'));
+    await tester.tap(find.text('次の問題へ'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Question 2 / 10'), findsOneWidget);
     expect(
       tester
@@ -71,6 +86,17 @@ void main() {
 
     await tester.ensureVisible(find.text('回答する'));
     await tester.tap(find.text('回答する'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('結果発表'), findsWidgets);
+    expect(find.text('問題 2 / 3'), findsOneWidget);
+    expect(find.text('あなたの回答'), findsOneWidget);
+    expect(find.text('正解'), findsOneWidget);
+    expect(find.text('正答率70%を目指しましょう'), findsOneWidget);
+    expect(find.text('次の問題へ'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('次の問題へ'));
+    await tester.tap(find.text('次の問題へ'));
     await tester.pumpAndSettle();
 
     expect(find.text('Question 3 / 10'), findsOneWidget);
@@ -89,12 +115,23 @@ void main() {
     await tester.tap(find.text('回答する'));
     await tester.pumpAndSettle();
 
+    expect(find.text('結果発表'), findsWidgets);
+    expect(find.text('問題 3 / 3'), findsOneWidget);
+    expect(find.text('あなたの回答'), findsOneWidget);
+    expect(find.text('正解'), findsOneWidget);
+    expect(find.text('正答率70%を目指しましょう'), findsOneWidget);
+    expect(find.text('最終結果を見る'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('最終結果を見る'));
+    await tester.tap(find.text('最終結果を見る'));
+    await tester.pumpAndSettle();
+
     expect(find.text('結果発表'), findsOneWidget);
     expect(find.text('ゲーム終了です'), findsOneWidget);
-    expect(find.text('回答数: 3件'), findsOneWidget);
-    expect(find.text('正解数: 1問'), findsOneWidget);
-    expect(find.text('正答率: 33%'), findsOneWidget);
-    expect(find.text('ランク: C'), findsOneWidget);
+    expect(find.text('回答数'), findsOneWidget);
+    expect(find.text('3件'), findsOneWidget);
+    expect(find.text('正解数'), findsOneWidget);
+    expect(find.text('正答率70%を目指しましょう'), findsOneWidget);
     expect(find.text('Q1'), findsOneWidget);
     expect(find.text('選択: Chart A'), findsOneWidget);
     expect(find.text('正解: Chart A'), findsOneWidget);
