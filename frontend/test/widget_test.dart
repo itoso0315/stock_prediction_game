@@ -22,7 +22,7 @@ void main() {
     await tester.tap(find.text('ゲーム開始'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Question 1 / 10'), findsOneWidget);
+    expect(find.text('Question 1 / 3'), findsOneWidget);
     expect(
       find.text('6か月分のチャートを見て、1か月後の評価日に最も騰落率が高い選択肢を選んでください。'),
       findsOneWidget,
@@ -72,7 +72,7 @@ void main() {
     await tester.tap(find.text('次の問題へ'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Question 2 / 10'), findsOneWidget);
+    expect(find.text('Question 2 / 3'), findsOneWidget);
     expect(
       tester
           .widget<FilledButton>(find.widgetWithText(FilledButton, '回答する'))
@@ -99,7 +99,7 @@ void main() {
     await tester.tap(find.text('次の問題へ'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Question 3 / 10'), findsOneWidget);
+    expect(find.text('Question 3 / 3'), findsOneWidget);
     expect(
       tester
           .widget<FilledButton>(find.widgetWithText(FilledButton, '回答する'))

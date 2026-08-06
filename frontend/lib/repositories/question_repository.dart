@@ -8,7 +8,7 @@ class QuestionRepository {
     return const [
       Question(
         currentNumber: 1,
-        totalQuestions: 10,
+        totalQuestions: 3,
         chartLabels: ['Chart A', 'Chart B', 'Chart C'],
         answers: [
           Answer(
@@ -44,7 +44,7 @@ class QuestionRepository {
       ),
       Question(
         currentNumber: 2,
-        totalQuestions: 10,
+        totalQuestions: 3,
         chartLabels: ['Chart A', 'Chart B', 'Chart C'],
         answers: [
           Answer(
@@ -80,7 +80,7 @@ class QuestionRepository {
       ),
       Question(
         currentNumber: 3,
-        totalQuestions: 10,
+        totalQuestions: 3,
         chartLabels: ['Chart A', 'Chart B', 'Chart C'],
         answers: [
           Answer(

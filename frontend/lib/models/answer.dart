@@ -1,4 +1,18 @@
-enum AnswerType { stock, cash }
+enum AnswerType {
+  stock,
+  cash;
+
+  factory AnswerType.fromJson(String value) {
+    switch (value) {
+      case 'stock':
+        return AnswerType.stock;
+      case 'cash':
+        return AnswerType.cash;
+      default:
+        throw ArgumentError('Unknown answer type: $value');
+    }
+  }
+}
 
 class Answer {
   const Answer({
@@ -10,6 +24,18 @@ class Answer {
     this.evaluationClose,
     this.returnRate,
   });
+
+  factory Answer.fromJson(Map<String, dynamic> json) {
+    return Answer(
+      label: json['label'] as String,
+      type: AnswerType.fromJson(json['type'] as String),
+      ticker: json['ticker'] as String?,
+      companyName: json['companyName'] as String?,
+      baseClose: (json['baseClose'] as num?)?.toDouble(),
+      evaluationClose: (json['evaluationClose'] as num?)?.toDouble(),
+      returnRate: (json['returnRate'] as num?)?.toDouble(),
+    );
+  }
 
   final String label;
   final AnswerType type;

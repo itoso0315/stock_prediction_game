@@ -15,6 +15,25 @@ class Question {
     required this.correctAnswerLabel,
   });
 
+  factory Question.fromJson(Map<String, dynamic> json) {
+    final answers = (json['choices'] as List<dynamic>)
+        .map(
+          (choiceJson) => Answer.fromJson(choiceJson as Map<String, dynamic>),
+        )
+        .toList();
+
+    return Question(
+      currentNumber: json['currentNumber'] as int,
+      totalQuestions: json['totalQuestions'] as int,
+      chartLabels: answers
+          .where((answer) => answer.isStock)
+          .map((answer) => answer.label)
+          .toList(),
+      answers: answers,
+      correctAnswerLabel: json['correctChoiceLabel'] as String,
+    );
+  }
+
   List<String> get answerLabels =>
       answers.map((answer) => answer.label).toList();
 

@@ -116,9 +116,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Question ${question.currentNumber} / ${question.totalQuestions}',
-        ),
+        title: Text('Question ${_currentIndex + 1} / ${_questions.length}'),
         centerTitle: true,
       ),
       body: SafeArea(
