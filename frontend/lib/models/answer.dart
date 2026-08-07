@@ -1,3 +1,5 @@
+import 'candle.dart';
+
 enum AnswerType {
   stock,
   cash;
@@ -23,6 +25,7 @@ class Answer {
     this.baseClose,
     this.evaluationClose,
     this.returnRate,
+    this.candles = const [],
   });
 
   factory Answer.fromJson(Map<String, dynamic> json) {
@@ -34,6 +37,10 @@ class Answer {
       baseClose: (json['baseClose'] as num?)?.toDouble(),
       evaluationClose: (json['evaluationClose'] as num?)?.toDouble(),
       returnRate: (json['returnRate'] as num?)?.toDouble(),
+      candles: (json['candles'] as List<dynamic>?)
+              ?.map((e) => Candle.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 
@@ -44,6 +51,7 @@ class Answer {
   final double? baseClose;
   final double? evaluationClose;
   final double? returnRate;
+  final List<Candle> candles;
 
   bool get isStock => type == AnswerType.stock;
   bool get isCash => type == AnswerType.cash;

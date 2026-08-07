@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/answer_record.dart';
+import '../models/answer.dart';
 import '../models/question.dart';
 import '../repositories/question_api_repository.dart';
 import '../widgets/chart_card.dart';
@@ -226,12 +227,10 @@ class _QuestionScreenState extends State<QuestionScreen> {
                           index++
                         ) ...[
                           _AnswerSelectionCard(
-                            label: question.answerLabels[index],
-                            isSelected:
-                                _selectedAnswerLabel ==
-                                question.answerLabels[index],
-                            onTap: () =>
-                                _selectAnswer(question.answerLabels[index]),
+                            label: question.answers[index].label,
+                            answer: question.answers[index],
+                            isSelected: _selectedAnswerLabel == question.answers[index].label,
+                            onTap: () => _selectAnswer(question.answers[index].label),
                           ),
                           if (index < question.answerLabels.length - 1)
                             const SizedBox(height: 12),
@@ -267,11 +266,13 @@ class _QuestionScreenState extends State<QuestionScreen> {
 class _AnswerSelectionCard extends StatelessWidget {
   const _AnswerSelectionCard({
     required this.label,
+    required this.answer,
     required this.isSelected,
     required this.onTap,
   });
 
   final String label;
+  final Answer? answer;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -296,7 +297,10 @@ class _AnswerSelectionCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (label.startsWith('Chart')) ...[
-                ChartCard(label: label),
+                ChartCard(
+                  label: label,
+                  answer: answer,
+                ),
                 const SizedBox(height: 12),
               ],
               Text(
