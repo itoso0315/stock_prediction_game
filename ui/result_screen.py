@@ -138,21 +138,98 @@ def render_cash_result(cash_result_text: str | None) -> None:
 
 
 def render_ai_comment(technical_comment: str) -> None:
-    """AIひとこと解説を表示する。"""
+    """AI解説を、正解・不正解・学びの3ポイントに分けて表示する。"""
+    selected_marker = "一方、選択した"
+    lesson_marker = "今回のポイントは、"
+
+    correct_text = technical_comment
+    selected_text = ""
+    lesson_text = ""
+
+    if lesson_marker in correct_text:
+        before_lesson, lesson_body = correct_text.split(lesson_marker, 1)
+        correct_text = before_lesson.strip()
+        lesson_text = f"{lesson_marker}{lesson_body.strip()}"
+
+    if selected_marker in correct_text:
+        correct_part, selected_part = correct_text.split(selected_marker, 1)
+        correct_text = correct_part.strip()
+        selected_text = f"{selected_marker}{selected_part.strip()}"
+
     st.markdown(
-        f"""
+        """
         <div class="technical-comment-card">
             <div class="technical-comment-title">🤖 AIひとこと解説</div>
             <div class="technical-comment-note">
                 価格・出来高・移動平均線から自動生成したルールベース解説です。
             </div>
-            <div class="technical-comment-body">
-                {escape(technical_comment)}
-            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
+
+    if correct_text:
+        st.markdown(
+            f"""
+            <div style="
+                background:#ECFDF3;
+                border:1px solid #86EFAC;
+                border-radius:14px;
+                padding:16px 18px;
+                margin:10px 0;
+            ">
+                <div style="font-weight:850; color:#166534; margin-bottom:8px;">
+                    ✅ 正解Chartのポイント
+                </div>
+                <div style="color:#334155; line-height:1.7;">
+                    {escape(correct_text)}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    if selected_text:
+        st.markdown(
+            f"""
+            <div style="
+                background:#FEF2F2;
+                border:1px solid #FCA5A5;
+                border-radius:14px;
+                padding:16px 18px;
+                margin:10px 0;
+            ">
+                <div style="font-weight:850; color:#991B1B; margin-bottom:8px;">
+                    ⚠️ 選んだChartの注意点
+                </div>
+                <div style="color:#334155; line-height:1.7;">
+                    {escape(selected_text)}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    if lesson_text:
+        st.markdown(
+            f"""
+            <div style="
+                background:#FFF8E8;
+                border:1px solid #F5D48B;
+                border-radius:14px;
+                padding:16px 18px;
+                margin:10px 0 16px;
+            ">
+                <div style="font-weight:850; color:#92400E; margin-bottom:8px;">
+                    💡 今回のポイント
+                </div>
+                <div style="color:#334155; line-height:1.7;">
+                    {escape(lesson_text)}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 def render_recommended_book(
