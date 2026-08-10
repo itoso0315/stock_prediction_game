@@ -198,14 +198,6 @@ class _StatsCard extends StatelessWidget {
               crossAxisSpacing: 10,
               children: [
                 _StatMetric(
-                  label: '最高正答率',
-                  value: values == null ? '--' : '${values.bestCorrectRate}%',
-                ),
-                _StatMetric(
-                  label: '最高正解数',
-                  value: values == null ? '--' : '${values.bestCorrectCount}問',
-                ),
-                _StatMetric(
                   label: '挑戦回数',
                   value: values == null ? '--' : '${values.challengeCount}回',
                 ),

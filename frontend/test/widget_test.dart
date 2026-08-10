@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:stock_trainer_flutter/main.dart';
+import 'package:stock_trainer_flutter/repositories/game_stats_repository.dart';
 import 'package:stock_trainer_flutter/repositories/question_api_repository.dart';
 import 'package:stock_trainer_flutter/repositories/question_repository.dart';
 import 'package:stock_trainer_flutter/widgets/chart_card.dart';
@@ -20,7 +23,10 @@ void main() {
     }
   });
 
-  testWidgets('Task035で回答後に1問ごとの結果発表画面を表示できる', (tester) async {
+  testWidgets('ゲーム完了後に結果を保存しホーム画面の戦績を再読込する', (tester) async {
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.empty();
+    const gameStatsRepository = LocalGameStatsRepository();
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -78,7 +84,12 @@ void main() {
       client: client,
     );
 
-    await tester.pumpWidget(StockTrainerApp(questionRepository: repository));
+    await tester.pumpWidget(
+      StockTrainerApp(
+        questionRepository: repository,
+        gameStatsRepository: gameStatsRepository,
+      ),
+    );
 
     expect(find.text('ゲーム開始'), findsOneWidget);
     expect(find.text('10問チャレンジ'), findsOneWidget);
@@ -135,8 +146,8 @@ void main() {
       isNull,
     );
 
-    await tester.ensureVisible(find.text('Chart A').last);
-    await tester.tap(find.text('Chart A').last);
+    await tester.ensureVisible(find.text('Chart B').last);
+    await tester.tap(find.text('Chart B').last);
     await tester.pumpAndSettle();
 
     expect(
@@ -239,14 +250,14 @@ void main() {
     expect(find.text('正解数'), findsOneWidget);
     expect(find.text('正答率70%を目指しましょう'), findsOneWidget);
     expect(find.text('Q1'), findsOneWidget);
-    expect(find.text('選択: Chart A'), findsOneWidget);
+    expect(find.text('選択: Chart B'), findsOneWidget);
     expect(find.text('正解: Chart B'), findsNWidgets(2));
     expect(find.text('Q2'), findsOneWidget);
     expect(find.text('選択: 現金保有'), findsNWidgets(2));
-    expect(find.text('結果: 不正解'), findsNWidgets(3));
+    expect(find.text('結果: 不正解'), findsNWidgets(2));
     expect(find.text('Q3'), findsOneWidget);
     expect(find.text('正解: Chart C'), findsOneWidget);
-    expect(find.text('3問中 0問正解'), findsOneWidget);
+    expect(find.text('3問中 1問正解'), findsOneWidget);
     expect(find.text('もう一度プレイ'), findsOneWidget);
     expect(find.text('ゲーム開始'), findsNothing);
 
@@ -256,6 +267,14 @@ void main() {
 
     expect(find.text('ゲーム開始'), findsOneWidget);
     expect(find.byType(ChartCard), findsNothing);
+    expect(find.text('1回'), findsOneWidget);
+    expect(find.text('33%'), findsOneWidget);
+    expect(find.text('最高正答率'), findsNothing);
+    expect(find.text('最高正解数'), findsNothing);
+
+    final savedStats = await gameStatsRepository.load();
+    expect(savedStats.challengeCount, 1);
+    expect(savedStats.averageCorrectRate, 33);
   });
 }
 

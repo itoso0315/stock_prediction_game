@@ -73,12 +73,50 @@ class StockTrainerApp extends StatelessWidget {
           bodyLarge: TextStyle(color: Color(0xFFE7E1D1)),
           bodyMedium: TextStyle(color: Color(0xFFB8B2A4)),
         ),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: _LeftToRightPageTransitionsBuilder(),
+            TargetPlatform.iOS: _LeftToRightPageTransitionsBuilder(),
+            TargetPlatform.macOS: _LeftToRightPageTransitionsBuilder(),
+            TargetPlatform.windows: _LeftToRightPageTransitionsBuilder(),
+            TargetPlatform.linux: _LeftToRightPageTransitionsBuilder(),
+            TargetPlatform.fuchsia: _LeftToRightPageTransitionsBuilder(),
+          },
+        ),
         useMaterial3: true,
       ),
       home: HomeScreen(
         questionRepository: questionRepository,
         gameStatsRepository: gameStatsRepository,
       ),
+    );
+  }
+}
+
+class _LeftToRightPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _LeftToRightPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return AnimatedBuilder(
+      animation: animation,
+      child: child,
+      builder: (context, child) {
+        final progress = Curves.easeInOut.transform(animation.value);
+        final horizontalOffset = animation.status == AnimationStatus.reverse
+            ? 1 - progress
+            : progress - 1;
+        return FractionalTranslation(
+          translation: Offset(horizontalOffset, 0),
+          child: child,
+        );
+      },
     );
   }
 }

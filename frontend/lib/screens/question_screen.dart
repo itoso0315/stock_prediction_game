@@ -176,7 +176,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
     }
 
     if (_currentIndex >= questions.length - 1) {
-      Navigator.of(context).pushAndRemoveUntil(
+      Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => ResultScreen(
             answerRecords: _answerRecords,
@@ -184,24 +184,17 @@ class _QuestionScreenState extends State<QuestionScreen> {
             gameStatsRepository: widget.gameStatsRepository,
           ),
         ),
-        (route) => route.isFirst,
       );
       return;
     }
 
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => QuestionScreen(
-          initialIndex: _currentIndex + 1,
-          initialAnswerRecords: _answerRecords,
-          initialQuestions: questions,
-          initialShowMovingAverages: _showMovingAverages,
-          questionRepository: widget.questionRepository,
-          gameStatsRepository: widget.gameStatsRepository,
-        ),
-      ),
-      (route) => route.isFirst,
-    );
+    Navigator.of(context).pop();
+    setState(() {
+      _currentIndex++;
+      _selectedAnswerLabel = null;
+      _isSubmitting = false;
+      _errorMessage = null;
+    });
   }
 
   @override

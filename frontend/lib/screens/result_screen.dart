@@ -6,7 +6,7 @@ import '../repositories/game_stats_repository.dart';
 import '../services/result_share_service.dart';
 import 'answer_review_screen.dart';
 
-class ResultScreen extends StatelessWidget {
+class ResultScreen extends StatefulWidget {
   const ResultScreen({
     super.key,
     required this.answerRecords,
@@ -20,7 +20,39 @@ class ResultScreen extends StatelessWidget {
   final ResultShareService shareService;
   final GameStatsRepository? gameStatsRepository;
 
-  void _goBackHome(BuildContext context) {
+  @override
+  State<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends State<ResultScreen> {
+  late final Future<void> _recordResultFuture;
+
+  List<AnswerRecord> get answerRecords => widget.answerRecords;
+  List<Question> get questions => widget.questions;
+  ResultShareService get shareService => widget.shareService;
+
+  @override
+  void initState() {
+    super.initState();
+    _recordResultFuture = _recordResult();
+  }
+
+  Future<void> _recordResult() async {
+    if (answerRecords.isEmpty) return;
+    try {
+      await (widget.gameStatsRepository ?? const LocalGameStatsRepository())
+          .recordGame(
+            correctCount: _calculateCorrectCount(),
+            totalQuestions: answerRecords.length,
+          );
+    } catch (_) {
+      // 記録保存の失敗で最終Result画面を壊さない。
+    }
+  }
+
+  Future<void> _goBackHome(BuildContext context) async {
+    await _recordResultFuture;
+    if (!context.mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
@@ -147,13 +179,6 @@ class ResultScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _GameResultRecorder(
-                          correctCount: correctCount,
-                          totalQuestions: answerRecords.length,
-                          repository:
-                              gameStatsRepository ??
-                              const LocalGameStatsRepository(),
-                        ),
                         Text(
                           '結果発表',
                           style: Theme.of(context).textTheme.headlineMedium,
@@ -306,44 +331,6 @@ class ResultScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class _GameResultRecorder extends StatefulWidget {
-  const _GameResultRecorder({
-    required this.correctCount,
-    required this.totalQuestions,
-    required this.repository,
-  });
-
-  final int correctCount;
-  final int totalQuestions;
-  final GameStatsRepository repository;
-
-  @override
-  State<_GameResultRecorder> createState() => _GameResultRecorderState();
-}
-
-class _GameResultRecorderState extends State<_GameResultRecorder> {
-  @override
-  void initState() {
-    super.initState();
-    _recordResult();
-  }
-
-  Future<void> _recordResult() async {
-    if (widget.totalQuestions == 0) return;
-    try {
-      await widget.repository.recordGame(
-        correctCount: widget.correctCount,
-        totalQuestions: widget.totalQuestions,
-      );
-    } catch (_) {
-      // 記録保存の失敗で最終Result画面を壊さない。
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 class _SummaryMetric extends StatelessWidget {

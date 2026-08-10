@@ -11,7 +11,7 @@ import 'package:stock_trainer_flutter/repositories/game_stats_repository.dart';
 import 'package:stock_trainer_flutter/screens/result_screen.dart';
 
 void main() {
-  test('完了したゲームから最高記録・挑戦回数・平均正答率を保存する', () async {
+  test('完了したゲームから挑戦回数・平均正答率を保存する', () async {
     SharedPreferencesAsyncPlatform.instance =
         InMemorySharedPreferencesAsync.empty();
     const repository = LocalGameStatsRepository();
@@ -23,8 +23,6 @@ void main() {
     );
 
     expect(stats.challengeCount, 2);
-    expect(stats.bestCorrectCount, 7);
-    expect(stats.bestCorrectRate, 70);
     expect(stats.averageCorrectRate, 55);
   });
 
@@ -32,8 +30,6 @@ void main() {
     final repository = _FakeStatsRepository(
       const GameStats(
         challengeCount: 8,
-        bestCorrectCount: 7,
-        bestCorrectRate: 70,
         totalCorrectCount: 42,
         totalQuestionCount: 80,
       ),
@@ -42,10 +38,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('これまでの記録'), findsOneWidget);
-    expect(find.text('最高正答率'), findsOneWidget);
-    expect(find.text('70%'), findsOneWidget);
-    expect(find.text('最高正解数'), findsOneWidget);
-    expect(find.text('7問'), findsOneWidget);
+    expect(find.text('最高正答率'), findsNothing);
+    expect(find.text('最高正解数'), findsNothing);
     expect(find.text('挑戦回数'), findsOneWidget);
     expect(find.text('8回'), findsOneWidget);
     expect(find.text('平均正答率'), findsOneWidget);

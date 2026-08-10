@@ -30,6 +30,23 @@ flutter run --dart-define=API_BASE_URL=http://192.168.11.8:8000
 ```
 
 - Flutter側は `API_BASE_URL` でAPI接続先を切り替えられる状態
+- RenderへFastAPI Backendを公開済み
+- 公開URL：`https://stock-prediction-game-api.onrender.com`
+- iPhone Safariから公開Backendの `/api/health` が正常応答することを確認済み
+- 公開環境の `/api/questions` が実データを返すことを確認済み
+- RenderでYahoo Financeの取得件数が不足した場合の追加取得フォールバックを実装済み
+- Flutter実機からRender Backendへ接続し、問題画面を表示できることを確認済み
+
+### 実機確認で判明した戦績保存不具合
+
+10問を最後まで回答してホーム画面へ戻っても、以下の戦績が初期値のまま更新されない。
+
+- 挑戦回数
+- 平均正答率
+
+Task 054では、10問目回答完了から最終リザルト生成、ゲーム結果保存、永続化、
+ホーム画面復帰、保存済み戦績の再読込、表示更新までの経路を確認し、原因を特定した
+うえで必要最小限の修正と再発防止テストを行う。
 
 ---
 
@@ -44,6 +61,8 @@ flutter run --dart-define=API_BASE_URL=http://192.168.11.8:8000
 5. Mac上のFastAPIを停止してもiPhoneで問題画面を表示できる
 6. MacとiPhoneが同じWi-Fiに接続されていなくてもゲームを開始できる
 7. 既存のMacローカル開発環境を壊さない
+8. 10問プレイ完了時にゲーム結果が端末へ永続化される
+9. ホーム画面へ戻った際に、挑戦回数・平均正答率が再読込される
 
 ---
 
@@ -240,17 +259,22 @@ Task 054では以下を実装しない。
 
 ## 完了条件
 
-- [ ] FastAPI Backendの公開URLが発行されている
-- [ ] 公開URLがHTTPSでアクセス可能
-- [ ] `/api/health` または同等のヘルスチェックが成功
-- [ ] `/api/questions` が公開環境で正常応答
-- [ ] Flutterから公開Backendへ接続成功
-- [ ] iPhone実機で問題画面まで表示成功
+- [x] FastAPI Backendの公開URLが発行されている
+- [x] 公開URLがHTTPSでアクセス可能
+- [x] `/api/health` または同等のヘルスチェックが成功
+- [x] `/api/questions` が公開環境で正常応答
+- [x] Flutterから公開Backendへ接続成功
+- [x] iPhone実機で問題画面まで表示成功
 - [ ] Mac上のFastAPI停止中でも動作成功
 - [ ] LAN外からも問題取得成功
-- [ ] Backend tests成功
-- [ ] `flutter analyze` 成功
-- [ ] `flutter test` 成功
+- [x] 10問プレイ完了時に戦績が端末へ永続化される（コード・自動テスト）
+- [x] ホーム画面復帰時に保存済み戦績が再読込される（コード・自動テスト）
+- [x] 挑戦回数・平均正答率が正しく表示される（コード・自動テスト）
+- [x] 戦績保存からホーム画面更新までの再発防止テストが成功
+- [ ] iPhone実機で10問完了後に挑戦回数・平均正答率が更新される
+- [x] Backend tests成功
+- [x] `flutter analyze` 成功
+- [x] `flutter test` 成功
 
 ## Task 054 完了状態
 
