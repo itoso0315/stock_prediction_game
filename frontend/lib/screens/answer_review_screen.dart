@@ -17,6 +17,7 @@ class AnswerReviewScreen extends StatelessWidget {
     required this.totalQuestions,
     required this.isLastQuestion,
     required this.onNext,
+    this.showMovingAverages = false,
     this.isHistoryReview = false,
     this.externalUrlLauncher,
   });
@@ -28,6 +29,7 @@ class AnswerReviewScreen extends StatelessWidget {
   final int totalQuestions;
   final bool isLastQuestion;
   final VoidCallback onNext;
+  final bool showMovingAverages;
   final bool isHistoryReview;
   final Future<bool> Function(Uri uri)? externalUrlLauncher;
 
@@ -166,6 +168,7 @@ class AnswerReviewScreen extends StatelessWidget {
                                 answerRecord.selectedAnswerLabel,
                             isCorrect:
                                 answer.label == question.correctAnswerLabel,
+                            showMovingAverages: showMovingAverages,
                             onOpenYahooFinance: answer.yahooFinanceUri == null
                                 ? null
                                 : () => _openYahooFinance(context, answer),
@@ -254,6 +257,7 @@ class _ResultAnswerCard extends StatelessWidget {
     required this.evaluationDate,
     required this.isSelected,
     required this.isCorrect,
+    required this.showMovingAverages,
     this.onOpenYahooFinance,
   });
 
@@ -262,6 +266,7 @@ class _ResultAnswerCard extends StatelessWidget {
   final String evaluationDate;
   final bool isSelected;
   final bool isCorrect;
+  final bool showMovingAverages;
   final VoidCallback? onOpenYahooFinance;
 
   @override
@@ -341,6 +346,12 @@ class _ResultAnswerCard extends StatelessWidget {
                 height: 240,
                 child: CandlestickChart(
                   candles: answer.resultCandles,
+                  ma20: answer.ma20,
+                  ma40: answer.ma40,
+                  ma70: answer.ma70,
+                  showMa20: showMovingAverages,
+                  showMa40: showMovingAverages,
+                  showMa70: showMovingAverages,
                   boundaryDate: baseDate,
                 ),
               ),

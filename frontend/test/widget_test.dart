@@ -176,6 +176,13 @@ void main() {
     expect(find.text('次の問題へ'), findsOneWidget);
     expect(find.text('× 不正解'), findsNothing);
     expect(find.byType(CandlestickChart), findsNWidgets(3));
+    for (final chart in tester.widgetList<CandlestickChart>(
+      find.byType(CandlestickChart),
+    )) {
+      expect(chart.showMa20, isTrue);
+      expect(chart.showMa40, isTrue);
+      expect(chart.showMa70, isTrue);
+    }
     expect(find.text('3099.T'), findsOneWidget);
     expect(find.text('現金保有'), findsWidgets);
     expect(find.text('0.00%'), findsWidgets);

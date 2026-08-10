@@ -149,6 +149,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
           answeredCount: _answerRecords.length,
           totalQuestions: questions.length,
           isLastQuestion: _currentIndex >= questions.length - 1,
+          showMovingAverages: _showMovingAverages,
           onNext: _goToNextFromReview,
         ),
       ),

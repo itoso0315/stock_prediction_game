@@ -22,6 +22,7 @@ void main() {
           answeredCount: 1,
           totalQuestions: 1,
           isLastQuestion: true,
+          showMovingAverages: true,
           onNext: () {},
           externalUrlLauncher: (uri) async {
             openedUri = uri;
@@ -43,6 +44,9 @@ void main() {
     );
     expect(chart.boundaryDate, '2024-05-01');
     expect(chart.candles, hasLength(2));
+    expect(chart.showMa20, isTrue);
+    expect(chart.showMa40, isTrue);
+    expect(chart.showMa70, isTrue);
     final yahooButton = find.byKey(const ValueKey('yahoo-finance-Chart A'));
     expect(yahooButton, findsOneWidget);
     await tester.tap(yahooButton);
@@ -76,6 +80,12 @@ void main() {
     expect(find.text('あなたの選択'), findsOneWidget);
     expect(find.text('○ 正解'), findsNothing);
     expect(find.text('× 不正解'), findsNothing);
+    final chart = tester.widget<CandlestickChart>(
+      find.byType(CandlestickChart),
+    );
+    expect(chart.showMa20, isFalse);
+    expect(chart.showMa40, isFalse);
+    expect(chart.showMa70, isFalse);
   });
 }
 
