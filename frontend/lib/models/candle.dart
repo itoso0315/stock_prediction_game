@@ -1,5 +1,3 @@
-
-
 class Candle {
   const Candle({
     required this.date,
@@ -7,6 +5,7 @@ class Candle {
     required this.high,
     required this.low,
     required this.close,
+    this.volume = 0,
   });
 
   factory Candle.fromJson(Map<String, dynamic> json) {
@@ -16,6 +15,7 @@ class Candle {
       high: (json['high'] as num).toDouble(),
       low: (json['low'] as num).toDouble(),
       close: (json['close'] as num).toDouble(),
+      volume: (json['volume'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -24,4 +24,5 @@ class Candle {
   final double high;
   final double low;
   final double close;
+  final int volume;
 }

@@ -9,7 +9,7 @@ void main() {
     final client = MockClient((request) async {
       expect(request.url.path, '/api/questions');
       return http.Response(
-        '''[
+        '''{"questions": [
           {
             "currentNumber": 1,
             "totalQuestions": 3,
@@ -25,7 +25,7 @@ void main() {
             ],
             "correctChoiceLabel": "Chart A"
           }
-        ]''',
+        ]}''',
         200,
         headers: {'content-type': 'application/json'},
       );
@@ -60,5 +60,35 @@ void main() {
     );
 
     expect(repository.getQuestions(), throwsException);
+  });
+
+  test('returns result question from result endpoint', () async {
+    final client = MockClient((request) async {
+      expect(request.url.path, '/api/results/1');
+      return http.Response(
+        '''{
+          "currentNumber": 1,
+          "totalQuestions": 1,
+          "baseDate": "2024-05-01",
+          "evaluationDate": "2024-06-03",
+          "choices": [
+            {"label": "Chart A", "type": "stock", "resultCandles": []},
+            {"label": "現金保有", "type": "cash", "returnRate": 0}
+          ],
+          "correctChoiceLabel": "現金保有"
+        }''',
+        200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
+      );
+    });
+    final repository = QuestionApiRepository(
+      baseUrl: 'http://127.0.0.1:8000',
+      client: client,
+    );
+
+    final question = await repository.getResultQuestion(1);
+    expect(question.baseDate, '2024-05-01');
+    expect(question.evaluationDate, '2024-06-03');
+    expect(question.correctAnswerLabel, '現金保有');
   });
 }

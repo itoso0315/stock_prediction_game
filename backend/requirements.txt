@@ -2,3 +2,6 @@
 
 fastapi
 uvicorn[standard]
+pandas>=2.2,<4.0
+yfinance>=0.2.40,<1.0
+pytest>=8.0,<10.0

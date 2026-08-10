@@ -1,4 +1,3 @@
-
 import 'answer.dart';
 
 class Question {
@@ -7,6 +6,8 @@ class Question {
   final List<String> chartLabels;
   final List<Answer> answers;
   final String correctAnswerLabel;
+  final String baseDate;
+  final String evaluationDate;
 
   const Question({
     required this.currentNumber,
@@ -14,6 +15,8 @@ class Question {
     required this.chartLabels,
     required this.answers,
     required this.correctAnswerLabel,
+    this.baseDate = '',
+    this.evaluationDate = '',
   });
 
   factory Question.fromJson(Map<String, dynamic> json) {
@@ -32,6 +35,8 @@ class Question {
           .toList(),
       answers: answers,
       correctAnswerLabel: json['correctChoiceLabel'] as String,
+      baseDate: json['baseDate'] as String? ?? '',
+      evaluationDate: json['evaluationDate'] as String? ?? '',
     );
   }
 

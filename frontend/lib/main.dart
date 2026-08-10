@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'repositories/question_api_repository.dart';
+import 'repositories/game_stats_repository.dart';
 import 'screens/home_screen.dart';
 
 void main() {
@@ -10,9 +11,11 @@ class StockTrainerApp extends StatelessWidget {
   const StockTrainerApp({
     super.key,
     this.questionRepository,
+    this.gameStatsRepository,
   });
 
   final QuestionApiRepository? questionRepository;
+  final GameStatsRepository? gameStatsRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +77,7 @@ class StockTrainerApp extends StatelessWidget {
       ),
       home: HomeScreen(
         questionRepository: questionRepository,
+        gameStatsRepository: gameStatsRepository,
       ),
     );
   }

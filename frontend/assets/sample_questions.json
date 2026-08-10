@@ -1,8 +1,37 @@
-final decoded = jsonDecode(jsonString) as Map<String, dynamic>;
-final questionsJson = decoded['questions'] as List<dynamic>;
-
-return questionsJson
-    .map(
-      (item) => Question.fromJson(item as Map<String, dynamic>),
-    )
-    .toList();
+{
+  "questions": [
+    {
+      "currentNumber": 1,
+      "totalQuestions": 3,
+      "choices": [
+        {"label": "Chart A", "type": "stock", "companyName": "三越伊勢丹ホールディングス", "returnRate": -3.73},
+        {"label": "Chart B", "type": "stock", "companyName": "ルネサスエレクトロニクス", "returnRate": 12.54},
+        {"label": "Chart C", "type": "stock", "companyName": "横浜フィナンシャルグループ", "returnRate": -0.76},
+        {"label": "現金保有", "type": "cash", "returnRate": 0}
+      ],
+      "correctChoiceLabel": "Chart B"
+    },
+    {
+      "currentNumber": 2,
+      "totalQuestions": 3,
+      "choices": [
+        {"label": "Chart A", "type": "stock"},
+        {"label": "Chart B", "type": "stock"},
+        {"label": "Chart C", "type": "stock"},
+        {"label": "現金保有", "type": "cash", "returnRate": 0}
+      ],
+      "correctChoiceLabel": "Chart B"
+    },
+    {
+      "currentNumber": 3,
+      "totalQuestions": 3,
+      "choices": [
+        {"label": "Chart A", "type": "stock"},
+        {"label": "Chart B", "type": "stock"},
+        {"label": "Chart C", "type": "stock"},
+        {"label": "現金保有", "type": "cash", "returnRate": 0}
+      ],
+      "correctChoiceLabel": "Chart C"
+    }
+  ]
+}

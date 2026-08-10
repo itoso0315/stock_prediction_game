@@ -1,237 +1,139 @@
-
-
 {
-  "gameId": "sample-game-001",
-  "questionCount": 3,
+  "gameId": "balanced-game-001",
+  "questionCount": 10,
   "market": "nikkei225",
   "lookbackDays": 120,
   "evaluationDays": 20,
   "questions": [
     {
-      "questionId": "q-001",
-      "currentNumber": 1,
-      "totalQuestions": 3,
-      "baseDate": "2024-05-01",
-      "evaluationDate": "2024-06-03",
+      "questionId": "q-001", "currentNumber": 1, "totalQuestions": 10,
+      "baseDate": "2023-08-01", "evaluationDate": "2023-09-01", "problemType": "normal",
       "choices": [
-        {
-          "label": "Chart A",
-          "type": "stock",
-          "ticker": "3099.T",
-          "code": "3099",
-          "companyName": "三越伊勢丹ホールディングス",
-          "baseClose": 2733.5,
-          "evaluationClose": 2631.5,
-          "returnRate": -3.73,
-          "yahooFinanceUrl": "https://finance.yahoo.co.jp/quote/3099.T/chart",
-          "candles": [
-            {"date": "2024-04-15", "open": 2580.0, "high": 2625.0, "low": 2550.0, "close": 2608.0},
-            {"date": "2024-04-16", "open": 2610.0, "high": 2640.0, "low": 2588.0, "close": 2622.0},
-            {"date": "2024-04-17", "open": 2625.0, "high": 2668.0, "low": 2602.0, "close": 2655.0},
-            {"date": "2024-04-18", "open": 2650.0, "high": 2672.0, "low": 2615.0, "close": 2630.0},
-            {"date": "2024-04-19", "open": 2632.0, "high": 2685.0, "low": 2620.0, "close": 2670.0},
-            {"date": "2024-04-22", "open": 2675.0, "high": 2710.0, "low": 2658.0, "close": 2698.0},
-            {"date": "2024-04-23", "open": 2700.0, "high": 2735.0, "low": 2672.0, "close": 2688.0},
-            {"date": "2024-04-24", "open": 2690.0, "high": 2748.0, "low": 2680.0, "close": 2730.0},
-            {"date": "2024-04-25", "open": 2735.0, "high": 2768.0, "low": 2705.0, "close": 2720.0},
-            {"date": "2024-04-26", "open": 2718.0, "high": 2752.0, "low": 2690.0, "close": 2742.0},
-            {"date": "2024-04-30", "open": 2740.0, "high": 2775.0, "low": 2712.0, "close": 2758.0},
-            {"date": "2024-05-01", "open": 2760.0, "high": 2788.0, "low": 2728.0, "close": 2733.5}
-          ],
-          "ma20": [],
-          "ma40": [],
-          "ma70": []
-        },
-        {
-          "label": "Chart B",
-          "type": "stock",
-          "ticker": "6723.T",
-          "code": "6723",
-          "companyName": "ルネサスエレクトロニクス",
-          "baseClose": 1662.5,
-          "evaluationClose": 1871.0,
-          "returnRate": 12.54,
-          "yahooFinanceUrl": "https://finance.yahoo.co.jp/quote/6723.T/chart",
-          "candles": [],
-          "ma20": [],
-          "ma40": [],
-          "ma70": []
-        },
-        {
-          "label": "Chart C",
-          "type": "stock",
-          "ticker": "7186.T",
-          "code": "7186",
-          "companyName": "横浜フィナンシャルグループ",
-          "baseClose": 1118.0,
-          "evaluationClose": 1109.5,
-          "returnRate": -0.76,
-          "yahooFinanceUrl": "https://finance.yahoo.co.jp/quote/7186.T/chart",
-          "candles": [],
-          "ma20": [],
-          "ma40": [],
-          "ma70": []
-        },
-        {
-          "label": "現金保有",
-          "type": "cash",
-          "ticker": null,
-          "code": null,
-          "companyName": "現金保有",
-          "baseClose": null,
-          "evaluationClose": null,
-          "returnRate": 0,
-          "yahooFinanceUrl": null,
-          "candles": [],
-          "ma20": [],
-          "ma40": [],
-          "ma70": []
-        }
-      ],
-      "correctChoiceLabel": "Chart B",
-      "explanation": "Chart Bが最も高い騰落率でした。"
+        {"label": "Chart A", "type": "stock", "ticker": "3099.T", "companyName": "三越伊勢丹ホールディングス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "6723.T", "companyName": "ルネサスエレクトロニクス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "6758.T", "companyName": "ソニーグループ", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
     },
     {
-      "questionId": "q-002",
-      "currentNumber": 2,
-      "totalQuestions": 3,
-      "baseDate": "2024-06-03",
-      "evaluationDate": "2024-07-01",
+      "questionId": "q-002", "currentNumber": 2, "totalQuestions": 10,
+      "baseDate": "2023-10-02", "evaluationDate": "2023-11-02", "problemType": "normal",
       "choices": [
-        {
-          "label": "Chart A",
-          "type": "stock",
-          "ticker": "9432.T",
-          "code": "9432",
-          "companyName": "日本電信電話",
-          "baseClose": 153.2,
-          "evaluationClose": 149.1,
-          "returnRate": -2.68,
-          "yahooFinanceUrl": "https://finance.yahoo.co.jp/quote/9432.T/chart",
-          "candles": [],
-          "ma20": [],
-          "ma40": [],
-          "ma70": []
-        },
-        {
-          "label": "Chart B",
-          "type": "stock",
-          "ticker": "8306.T",
-          "code": "8306",
-          "companyName": "三菱UFJフィナンシャル・グループ",
-          "baseClose": 1620.0,
-          "evaluationClose": 1735.5,
-          "returnRate": 7.13,
-          "yahooFinanceUrl": "https://finance.yahoo.co.jp/quote/8306.T/chart",
-          "candles": [],
-          "ma20": [],
-          "ma40": [],
-          "ma70": []
-        },
-        {
-          "label": "Chart C",
-          "type": "stock",
-          "ticker": "2914.T",
-          "code": "2914",
-          "companyName": "日本たばこ産業",
-          "baseClose": 3950.0,
-          "evaluationClose": 4015.0,
-          "returnRate": 1.65,
-          "yahooFinanceUrl": "https://finance.yahoo.co.jp/quote/2914.T/chart",
-          "candles": [],
-          "ma20": [],
-          "ma40": [],
-          "ma70": []
-        },
-        {
-          "label": "現金保有",
-          "type": "cash",
-          "ticker": null,
-          "code": null,
-          "companyName": "現金保有",
-          "baseClose": null,
-          "evaluationClose": null,
-          "returnRate": 0,
-          "yahooFinanceUrl": null,
-          "candles": [],
-          "ma20": [],
-          "ma40": [],
-          "ma70": []
-        }
-      ],
-      "correctChoiceLabel": "Chart B",
-      "explanation": "Chart Bが最も高い騰落率でした。"
+        {"label": "Chart A", "type": "stock", "ticker": "7186.T", "companyName": "横浜フィナンシャルグループ", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "3099.T", "companyName": "三越伊勢丹ホールディングス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "6723.T", "companyName": "ルネサスエレクトロニクス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
     },
     {
-      "questionId": "q-003",
-      "currentNumber": 3,
-      "totalQuestions": 3,
-      "baseDate": "2024-07-01",
-      "evaluationDate": "2024-08-01",
+      "questionId": "q-003", "currentNumber": 3, "totalQuestions": 10,
+      "baseDate": "2023-12-01", "evaluationDate": "2023-12-29", "problemType": "cash",
       "choices": [
-        {
-          "label": "Chart A",
-          "type": "stock",
-          "ticker": "6758.T",
-          "code": "6758",
-          "companyName": "ソニーグループ",
-          "baseClose": 13200.0,
-          "evaluationClose": 13080.0,
-          "returnRate": -0.91,
-          "yahooFinanceUrl": "https://finance.yahoo.co.jp/quote/6758.T/chart",
-          "candles": [],
-          "ma20": [],
-          "ma40": [],
-          "ma70": []
-        },
-        {
-          "label": "Chart B",
-          "type": "stock",
-          "ticker": "7974.T",
-          "code": "7974",
-          "companyName": "任天堂",
-          "baseClose": 8120.0,
-          "evaluationClose": 8260.0,
-          "returnRate": 1.72,
-          "yahooFinanceUrl": "https://finance.yahoo.co.jp/quote/7974.T/chart",
-          "candles": [],
-          "ma20": [],
-          "ma40": [],
-          "ma70": []
-        },
-        {
-          "label": "Chart C",
-          "type": "stock",
-          "ticker": "8035.T",
-          "code": "8035",
-          "companyName": "東京エレクトロン",
-          "baseClose": 24300.0,
-          "evaluationClose": 26320.0,
-          "returnRate": 8.31,
-          "yahooFinanceUrl": "https://finance.yahoo.co.jp/quote/8035.T/chart",
-          "candles": [],
-          "ma20": [],
-          "ma40": [],
-          "ma70": []
-        },
-        {
-          "label": "現金保有",
-          "type": "cash",
-          "ticker": null,
-          "code": null,
-          "companyName": "現金保有",
-          "baseClose": null,
-          "evaluationClose": null,
-          "returnRate": 0,
-          "yahooFinanceUrl": null,
-          "candles": [],
-          "ma20": [],
-          "ma40": [],
-          "ma70": []
-        }
-      ],
-      "correctChoiceLabel": "Chart C",
-      "explanation": "Chart Cが最も高い騰落率でした。"
+        {"label": "Chart A", "type": "stock", "ticker": "3099.T", "companyName": "三越伊勢丹ホールディングス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "7186.T", "companyName": "横浜フィナンシャルグループ", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "8306.T", "companyName": "三菱UFJフィナンシャル・グループ", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
+    },
+    {
+      "questionId": "q-004", "currentNumber": 4, "totalQuestions": 10,
+      "baseDate": "2023-12-01", "evaluationDate": "2023-12-29", "problemType": "normal",
+      "choices": [
+        {"label": "Chart A", "type": "stock", "ticker": "6758.T", "companyName": "ソニーグループ", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "3099.T", "companyName": "三越伊勢丹ホールディングス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "6723.T", "companyName": "ルネサスエレクトロニクス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
+    },
+    {
+      "questionId": "q-005", "currentNumber": 5, "totalQuestions": 10,
+      "baseDate": "2024-02-01", "evaluationDate": "2024-03-01", "problemType": "normal",
+      "choices": [
+        {"label": "Chart A", "type": "stock", "ticker": "3099.T", "companyName": "三越伊勢丹ホールディングス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "9432.T", "companyName": "NTT", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "2914.T", "companyName": "日本たばこ産業", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
+    },
+    {
+      "questionId": "q-006", "currentNumber": 6, "totalQuestions": 10,
+      "baseDate": "2024-04-01", "evaluationDate": "2024-05-01", "problemType": "normal",
+      "choices": [
+        {"label": "Chart A", "type": "stock", "ticker": "7186.T", "companyName": "横浜フィナンシャルグループ", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "3099.T", "companyName": "三越伊勢丹ホールディングス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "7974.T", "companyName": "任天堂", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
+    },
+    {
+      "questionId": "q-007", "currentNumber": 7, "totalQuestions": 10,
+      "baseDate": "2024-05-01", "evaluationDate": "2024-05-31", "problemType": "normal",
+      "choices": [
+        {"label": "Chart A", "type": "stock", "ticker": "3099.T", "companyName": "三越伊勢丹ホールディングス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "9432.T", "companyName": "NTT", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "8035.T", "companyName": "東京エレクトロン", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
+    },
+    {
+      "questionId": "q-008", "currentNumber": 8, "totalQuestions": 10,
+      "baseDate": "2024-06-03", "evaluationDate": "2024-07-03", "problemType": "normal",
+      "choices": [
+        {"label": "Chart A", "type": "stock", "ticker": "6723.T", "companyName": "ルネサスエレクトロニクス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "3099.T", "companyName": "三越伊勢丹ホールディングス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "7186.T", "companyName": "横浜フィナンシャルグループ", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
+    },
+    {
+      "questionId": "q-009", "currentNumber": 9, "totalQuestions": 10,
+      "baseDate": "2024-07-01", "evaluationDate": "2024-08-01", "problemType": "cash",
+      "choices": [
+        {"label": "Chart A", "type": "stock", "ticker": "3099.T", "companyName": "三越伊勢丹ホールディングス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "6723.T", "companyName": "ルネサスエレクトロニクス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "6758.T", "companyName": "ソニーグループ", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
+    },
+    {
+      "questionId": "q-010", "currentNumber": 10, "totalQuestions": 10,
+      "baseDate": "2024-08-01", "evaluationDate": "2024-08-30", "problemType": "normal",
+      "choices": [
+        {"label": "Chart A", "type": "stock", "ticker": "6758.T", "companyName": "ソニーグループ", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "3099.T", "companyName": "三越伊勢丹ホールディングス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "7186.T", "companyName": "横浜フィナンシャルグループ", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
+    },
+    {
+      "questionId": "q-011", "currentNumber": 11, "totalQuestions": 10,
+      "baseDate": "2023-08-01", "evaluationDate": "2023-09-01", "problemType": "normal",
+      "choices": [
+        {"label": "Chart A", "type": "stock", "ticker": "3099.T", "companyName": "三越伊勢丹ホールディングス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "9984.T", "companyName": "ソフトバンクグループ", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "7974.T", "companyName": "任天堂", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
+    },
+    {
+      "questionId": "q-012", "currentNumber": 12, "totalQuestions": 10,
+      "baseDate": "2023-10-02", "evaluationDate": "2023-11-02", "problemType": "normal",
+      "choices": [
+        {"label": "Chart A", "type": "stock", "ticker": "6861.T", "companyName": "キーエンス", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "4502.T", "companyName": "武田薬品工業", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "8058.T", "companyName": "三菱商事", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
+    },
+    {
+      "questionId": "q-013", "currentNumber": 13, "totalQuestions": 10,
+      "baseDate": "2024-07-01", "evaluationDate": "2024-08-01", "problemType": "cash",
+      "choices": [
+        {"label": "Chart A", "type": "stock", "ticker": "9984.T", "companyName": "ソフトバンクグループ", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart B", "type": "stock", "ticker": "7203.T", "companyName": "トヨタ自動車", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "Chart C", "type": "stock", "ticker": "8035.T", "companyName": "東京エレクトロン", "candles": [], "ma20": [], "ma40": [], "ma70": []},
+        {"label": "現金保有", "type": "cash", "returnRate": 0, "candles": [], "ma20": [], "ma40": [], "ma70": []}
+      ], "correctChoiceLabel": ""
     }
   ]
 }

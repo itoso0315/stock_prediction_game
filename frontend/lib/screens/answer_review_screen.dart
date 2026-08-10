@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/answer_record.dart';
 import '../models/question.dart';
+import '../models/answer.dart';
+import '../widgets/candlestick_chart.dart';
 
 class AnswerReviewScreen extends StatelessWidget {
   const AnswerReviewScreen({
@@ -13,6 +16,8 @@ class AnswerReviewScreen extends StatelessWidget {
     required this.totalQuestions,
     required this.isLastQuestion,
     required this.onNext,
+    this.isHistoryReview = false,
+    this.externalUrlLauncher,
   });
 
   final AnswerRecord answerRecord;
@@ -22,6 +27,8 @@ class AnswerReviewScreen extends StatelessWidget {
   final int totalQuestions;
   final bool isLastQuestion;
   final VoidCallback onNext;
+  final bool isHistoryReview;
+  final Future<bool> Function(Uri uri)? externalUrlLauncher;
 
   bool get isCorrect =>
       answerRecord.selectedAnswerLabel == question.correctAnswerLabel;
@@ -34,16 +41,33 @@ class AnswerReviewScreen extends StatelessWidget {
     return (correctCount / answeredCount * 100).floor();
   }
 
+  Future<void> _openYahooFinance(BuildContext context, Answer answer) async {
+    final uri = answer.yahooFinanceUri;
+    if (uri == null) return;
+
+    try {
+      final launched = await (externalUrlLauncher != null
+          ? externalUrlLauncher!(uri)
+          : launchUrl(uri, mode: LaunchMode.platformDefault));
+      if (launched || !context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Yahoo!ファイナンスを開けませんでした')));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Yahoo!ファイナンスを開けませんでした')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final resultText = isCorrect ? '○ 正解' : '× 不正解';
-    final buttonText = isLastQuestion ? '最終結果を見る' : '次の問題へ';
-
-    final selectedAnswer = question.answerByLabel(
-      answerRecord.selectedAnswerLabel,
-    );
-    final correctAnswer = question.correctAnswer;
+    final buttonText = isHistoryReview
+        ? '最終結果へ戻る'
+        : isLastQuestion
+        ? '最終結果を見る'
+        : '次の問題へ';
 
     return Scaffold(
       appBar: AppBar(title: const Text('結果発表'), centerTitle: true),
@@ -52,7 +76,9 @@ class AnswerReviewScreen extends StatelessWidget {
           builder: (context, constraints) {
             final isWideScreen = constraints.maxWidth >= 700;
             final horizontalPadding = isWideScreen ? 32.0 : 16.0;
-            final contentMaxWidth = isWideScreen ? 720.0 : constraints.maxWidth;
+            final contentMaxWidth = isWideScreen
+                ? 1000.0
+                : constraints.maxWidth;
             final buttonMaxWidth = isWideScreen ? 520.0 : constraints.maxWidth;
 
             return SingleChildScrollView(
@@ -118,44 +144,28 @@ class AnswerReviewScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Text(
-                                  '結果',
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  resultText,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium
-                                      ?.copyWith(color: colorScheme.primary),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 20),
-                                _AnswerDetail(
-                                  label: 'あなたの回答',
-                                  answerLabel: selectedAnswer.label,
-                                  companyName: selectedAnswer.companyName,
-                                  returnRate: selectedAnswer.returnRate,
-                                ),
-                                const SizedBox(height: 16),
-                                _AnswerDetail(
-                                  label: '正解',
-                                  answerLabel: correctAnswer.label,
-                                  companyName: correctAnswer.companyName,
-                                  returnRate: correctAnswer.returnRate,
-                                ),
-                              ],
-                            ),
-                          ),
+                        Text(
+                          '基準日：${_formatDate(question.baseDate)}　'
+                          '評価日：${_formatDate(question.evaluationDate)}',
+                          textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 12),
+                        for (final answer in question.answers) ...[
+                          _ResultAnswerCard(
+                            answer: answer,
+                            baseDate: question.baseDate,
+                            evaluationDate: question.evaluationDate,
+                            isSelected:
+                                answer.label ==
+                                answerRecord.selectedAnswerLabel,
+                            isCorrect:
+                                answer.label == question.correctAnswerLabel,
+                            onOpenYahooFinance: answer.yahooFinanceUri == null
+                                ? null
+                                : () => _openYahooFinance(context, answer),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         const SizedBox(height: 16),
                         Text(
                           '正答率70%を目指しましょう',
@@ -184,6 +194,113 @@ class AnswerReviewScreen extends StatelessWidget {
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+String _formatDate(String value) => value.replaceAll('-', '/');
+
+class _ResultAnswerCard extends StatelessWidget {
+  const _ResultAnswerCard({
+    required this.answer,
+    required this.baseDate,
+    required this.evaluationDate,
+    required this.isSelected,
+    required this.isCorrect,
+    this.onOpenYahooFinance,
+  });
+
+  final Answer answer;
+  final String baseDate;
+  final String evaluationDate;
+  final bool isSelected;
+  final bool isCorrect;
+  final VoidCallback? onOpenYahooFinance;
+
+  @override
+  Widget build(BuildContext context) {
+    final rate = answer.returnRate ?? 0;
+    final rateText = '${rate > 0 ? '+' : ''}${rate.toStringAsFixed(2)}%';
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final statusColor = isCorrect
+        ? Colors.greenAccent
+        : isSelected
+        ? Colors.redAccent
+        : colorScheme.outlineVariant;
+
+    return Card(
+      color: (isCorrect || isSelected)
+          ? statusColor.withAlpha(10)
+          : colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: statusColor,
+          width: isCorrect || isSelected ? 2 : 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  answer.label,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                if (answer.companyName != null) Text(answer.companyName!),
+                if (answer.ticker != null) Text(answer.ticker!),
+                if (isSelected)
+                  Chip(
+                    backgroundColor:
+                        (isCorrect ? Colors.greenAccent : Colors.redAccent)
+                            .withAlpha(28),
+                    side: BorderSide(
+                      color: isCorrect ? Colors.greenAccent : Colors.redAccent,
+                    ),
+                    label: const Text('あなたの選択'),
+                  ),
+                if (isCorrect)
+                  const Chip(
+                    backgroundColor: Color(0x1C69F0AE),
+                    side: BorderSide(color: Colors.greenAccent),
+                    label: Text('正解'),
+                  ),
+                if (onOpenYahooFinance != null)
+                  OutlinedButton.icon(
+                    key: ValueKey('yahoo-finance-${answer.label}'),
+                    onPressed: onOpenYahooFinance,
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    label: const Text('Yahoo!ファイナンス'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              rateText,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: rate >= 0 ? Colors.greenAccent : Colors.redAccent,
+              ),
+            ),
+            if (answer.isStock && answer.resultCandles.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 240,
+                child: CandlestickChart(
+                  candles: answer.resultCandles,
+                  boundaryDate: baseDate,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
@@ -220,59 +337,6 @@ class _ReviewMetric extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
             textAlign: TextAlign.center,
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AnswerDetail extends StatelessWidget {
-  const _AnswerDetail({
-    required this.label,
-    required this.answerLabel,
-    required this.companyName,
-    required this.returnRate,
-  });
-
-  final String label;
-  final String answerLabel;
-  final String? companyName;
-  final double? returnRate;
-
-  String get _returnRateText {
-    final rate = returnRate;
-
-    if (rate == null) {
-      return '騰落率 --';
-    }
-
-    final prefix = rate > 0 ? '+' : '';
-    return '騰落率 $prefix${rate.toStringAsFixed(2)}%';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 8),
-          Text(answerLabel, style: Theme.of(context).textTheme.titleMedium),
-          if (companyName != null) ...[
-            const SizedBox(height: 6),
-            Text(companyName!, style: Theme.of(context).textTheme.bodyMedium),
-          ],
-          const SizedBox(height: 6),
-          Text(_returnRateText, style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
     );

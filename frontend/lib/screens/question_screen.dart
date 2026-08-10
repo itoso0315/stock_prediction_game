@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../config/app_config.dart';
 import '../models/answer_record.dart';
 import '../models/answer.dart';
 import '../models/question.dart';
 import '../repositories/question_api_repository.dart';
+import '../repositories/game_stats_repository.dart';
 import '../widgets/chart_card.dart';
 import 'answer_review_screen.dart';
 import 'result_screen.dart';
@@ -15,12 +17,16 @@ class QuestionScreen extends StatefulWidget {
     this.initialAnswerRecords = const [],
     this.initialQuestions,
     this.questionRepository,
+    this.initialShowMovingAverages = false,
+    this.gameStatsRepository,
   });
 
   final int initialIndex;
   final List<AnswerRecord> initialAnswerRecords;
   final List<Question>? initialQuestions;
   final QuestionApiRepository? questionRepository;
+  final bool initialShowMovingAverages;
+  final GameStatsRepository? gameStatsRepository;
 
   @override
   State<QuestionScreen> createState() => _QuestionScreenState();
@@ -33,12 +39,15 @@ class _QuestionScreenState extends State<QuestionScreen> {
   var _isLoading = true;
   String? _errorMessage;
   String? _selectedAnswerLabel;
+  late bool _showMovingAverages;
+  var _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     _answerRecords = List<AnswerRecord>.from(widget.initialAnswerRecords);
+    _showMovingAverages = widget.initialShowMovingAverages;
 
     final initialQuestions = widget.initialQuestions;
 
@@ -55,7 +64,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
     try {
       final repository =
           widget.questionRepository ??
-          QuestionApiRepository(baseUrl: 'http://127.0.0.1:8000');
+          QuestionApiRepository(baseUrl: AppConfig.apiBaseUrl);
       final questions = await repository.getQuestions();
 
       if (!mounted) {
@@ -84,7 +93,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
     });
   }
 
-  void _confirmAnswer() {
+  Future<void> _confirmAnswer() async {
     final selectedAnswerLabel = _selectedAnswerLabel;
     final questions = _questions;
 
@@ -98,13 +107,35 @@ class _QuestionScreenState extends State<QuestionScreen> {
       selectedAnswerLabel: selectedAnswerLabel,
     );
 
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final repository =
+          widget.questionRepository ??
+          QuestionApiRepository(baseUrl: AppConfig.apiBaseUrl);
+      final resultQuestion = await repository.getResultQuestion(
+        question.currentNumber,
+      );
+      if (!mounted) return;
+      questions[_currentIndex] = resultQuestion;
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _errorMessage = '結果データを読み込めませんでした';
+      });
+      return;
+    }
+
     _answerRecords.add(answerRecord);
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => AnswerReviewScreen(
           answerRecord: answerRecord,
-          question: question,
+          question: questions[_currentIndex],
           correctCount: _calculateCorrectCount(),
           answeredCount: _answerRecords.length,
           totalQuestions: questions.length,
@@ -147,8 +178,11 @@ class _QuestionScreenState extends State<QuestionScreen> {
     if (_currentIndex >= questions.length - 1) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (context) =>
-              ResultScreen(answerRecords: _answerRecords, questions: questions),
+          builder: (context) => ResultScreen(
+            answerRecords: _answerRecords,
+            questions: questions,
+            gameStatsRepository: widget.gameStatsRepository,
+          ),
         ),
         (route) => route.isFirst,
       );
@@ -161,6 +195,9 @@ class _QuestionScreenState extends State<QuestionScreen> {
           initialIndex: _currentIndex + 1,
           initialAnswerRecords: _answerRecords,
           initialQuestions: questions,
+          initialShowMovingAverages: _showMovingAverages,
+          questionRepository: widget.questionRepository,
+          gameStatsRepository: widget.gameStatsRepository,
         ),
       ),
       (route) => route.isFirst,
@@ -196,6 +233,12 @@ class _QuestionScreenState extends State<QuestionScreen> {
             final answerButtonMaxWidth = isWideScreen
                 ? 520.0
                 : constraints.maxWidth;
+            final chartAnswers = question.answers
+                .where((answer) => answer.isStock)
+                .toList(growable: false);
+            final cashAnswer = question.answers.firstWhere(
+              (answer) => answer.isCash,
+            );
 
             return SingleChildScrollView(
               child: Center(
@@ -210,31 +253,93 @@ class _QuestionScreenState extends State<QuestionScreen> {
                       children: [
                         const SizedBox(height: 24),
                         Text(
-                          '6か月分のチャートを見て、1か月後の評価日に最も騰落率が高い選択肢を選んでください。',
+                          '過去約半年のチャートを見て、評価日までに最も騰落率が高い選択肢を選んでください。',
                           style: Theme.of(context).textTheme.titleMedium,
                           textAlign: TextAlign.center,
                         ),
+                        if (question.baseDate.isNotEmpty &&
+                            question.evaluationDate.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            '基準日：${_formatDate(question.baseDate)}　'
+                            '評価日：${_formatDate(question.evaluationDate)}',
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                         const SizedBox(height: 8),
                         Text(
                           '銘柄名は隠されています。チャートの形だけで判断しましょう。',
                           style: Theme.of(context).textTheme.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 24),
-                        for (
-                          var index = 0;
-                          index < question.answerLabels.length;
-                          index++
-                        ) ...[
-                          _AnswerSelectionCard(
-                            label: question.answers[index].label,
-                            answer: question.answers[index],
-                            isSelected: _selectedAnswerLabel == question.answers[index].label,
-                            onTap: () => _selectAnswer(question.answers[index].label),
+                        const SizedBox(height: 12),
+                        FilterChip(
+                          key: const ValueKey('toggle-moving-averages'),
+                          label: const Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 6,
+                            runSpacing: 2,
+                            children: [
+                              Text('移動平均線 ON／OFF'),
+                              _MovingAverageLegend(
+                                color: Colors.amber,
+                                label: '20',
+                              ),
+                              _MovingAverageLegend(
+                                color: Colors.cyanAccent,
+                                label: '40',
+                              ),
+                              _MovingAverageLegend(
+                                color: Colors.purpleAccent,
+                                label: '70',
+                              ),
+                            ],
                           ),
-                          if (index < question.answerLabels.length - 1)
-                            const SizedBox(height: 12),
-                        ],
+                          selected: _showMovingAverages,
+                          onSelected: (value) {
+                            setState(() {
+                              _showMovingAverages = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        Column(
+                          children: [
+                            for (
+                              var index = 0;
+                              index < chartAnswers.length;
+                              index++
+                            ) ...[
+                              _AnswerSelectionCard(
+                                label: chartAnswers[index].label,
+                                answer: chartAnswers[index],
+                                isSelected:
+                                    _selectedAnswerLabel ==
+                                    chartAnswers[index].label,
+                                onTap: () =>
+                                    _selectAnswer(chartAnswers[index].label),
+                                showMovingAverages: _showMovingAverages,
+                              ),
+                              if (index < chartAnswers.length - 1)
+                                const SizedBox(height: 12),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: answerButtonMaxWidth,
+                          ),
+                          child: _AnswerSelectionCard(
+                            label: cashAnswer.label,
+                            answer: cashAnswer,
+                            isSelected:
+                                _selectedAnswerLabel == cashAnswer.label,
+                            onTap: () => _selectAnswer(cashAnswer.label),
+                            showMovingAverages: _showMovingAverages,
+                          ),
+                        ),
                         const SizedBox(height: 24),
                         ConstrainedBox(
                           constraints: BoxConstraints(
@@ -243,10 +348,18 @@ class _QuestionScreenState extends State<QuestionScreen> {
                           child: SizedBox(
                             width: double.infinity,
                             child: FilledButton(
-                              onPressed: _selectedAnswerLabel == null
+                              onPressed:
+                                  _selectedAnswerLabel == null || _isSubmitting
                                   ? null
                                   : _confirmAnswer,
-                              child: const Text('回答する'),
+                              child: _isSubmitting
+                                  ? const SizedBox.square(
+                                      dimension: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text('回答する'),
                             ),
                           ),
                         ),
@@ -263,18 +376,48 @@ class _QuestionScreenState extends State<QuestionScreen> {
   }
 }
 
+String _formatDate(String value) => value.replaceAll('-', '/');
+
+class _MovingAverageLegend extends StatelessWidget {
+  const _MovingAverageLegend({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 3,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 2),
+        Text(label),
+      ],
+    );
+  }
+}
+
 class _AnswerSelectionCard extends StatelessWidget {
   const _AnswerSelectionCard({
     required this.label,
     required this.answer,
     required this.isSelected,
     required this.onTap,
+    required this.showMovingAverages,
   });
 
   final String label;
   final Answer? answer;
   final bool isSelected;
   final VoidCallback onTap;
+  final bool showMovingAverages;
 
   @override
   Widget build(BuildContext context) {
@@ -300,6 +443,7 @@ class _AnswerSelectionCard extends StatelessWidget {
                 ChartCard(
                   label: label,
                   answer: answer,
+                  showMovingAverages: showMovingAverages,
                 ),
                 const SizedBox(height: 12),
               ],

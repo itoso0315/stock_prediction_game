@@ -144,3 +144,35 @@ ChatGPTがレビューを行う。
 # このプロジェクトの合言葉
 
 **「良いコードを書く前に、良いプロダクトを作る。」**
+## iPhone実機でFlutter版を起動する
+
+Task053では、iPhoneとMacを同じWi-Fiへ接続し、Mac上のFastAPIへLAN経由で
+接続する。現在確認できたMacのLAN IPは `192.168.11.8`。DHCPで変わる場合は
+`ifconfig en0 | grep "inet "` で再確認する。
+
+BackendをLAN向けに起動する。
+
+```bash
+cd backend
+source .venv/bin/activate
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+iPhoneのSafariで `http://192.168.11.8:8000/api/health` を開き、
+`{"status":"ok"}` を確認してからFlutterを起動する。
+
+```bash
+cd frontend
+flutter devices
+flutter run -d <iPhoneのdevice-id> \
+  --dart-define=API_BASE_URL=http://192.168.11.8:8000
+```
+
+API URLは `API_BASE_URL` だけで切り替える。指定しないmacOS開発では従来どおり
+`http://127.0.0.1:8000` を使用する。本番Backend公開後は同じオプションへHTTPS
+URLを指定する。
+
+初回のみ `frontend/ios/Runner.xcworkspace` をXcodeで開き、Runnerターゲットの
+Signing & Capabilitiesで自分のTeamを選択する。Automatically manage signingは
+有効のままにする。iPhone側で要求された場合はDeveloper Modeと開発者Appの信頼を
+有効にする。
