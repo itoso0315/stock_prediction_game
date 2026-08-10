@@ -63,6 +63,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/app_icon_master.png
     - assets/sample_questions.json
 
   # To add assets to your application, add an assets section, like this:

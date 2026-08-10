@@ -38,6 +38,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('これまでの記録'), findsOneWidget);
+    expect(find.byKey(const ValueKey('stock-trainer-logo')), findsOneWidget);
     expect(find.text('最高正答率'), findsNothing);
     expect(find.text('最高正解数'), findsNothing);
     expect(find.text('挑戦回数'), findsOneWidget);

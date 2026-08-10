@@ -55,8 +55,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       body: SafeArea(
         child: LayoutBuilder(
@@ -81,20 +79,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 32),
                         Align(
                           alignment: Alignment.center,
-                          child: Container(
-                            width: 72,
-                            height: 72,
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary.withAlpha(30),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: colorScheme.primary.withAlpha(115),
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.show_chart,
-                              size: 36,
-                              color: colorScheme.primary,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: Image.asset(
+                              'assets/app_icon_master.png',
+                              key: const ValueKey('stock-trainer-logo'),
+                              width: 72,
+                              height: 72,
+                              fit: BoxFit.cover,
                             ),
                           ),
                         ),
