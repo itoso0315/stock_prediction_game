@@ -33,6 +33,7 @@ class QuestionScreen extends StatefulWidget {
 }
 
 class _QuestionScreenState extends State<QuestionScreen> {
+  final _scrollController = ScrollController();
   List<Question>? _questions;
   late int _currentIndex;
   late final List<AnswerRecord> _answerRecords;
@@ -85,6 +86,12 @@ class _QuestionScreenState extends State<QuestionScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _selectAnswer(String answerLabel) {
@@ -195,6 +202,9 @@ class _QuestionScreenState extends State<QuestionScreen> {
       _isSubmitting = false;
       _errorMessage = null;
     });
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
   }
 
   @override
@@ -234,6 +244,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
             );
 
             return SingleChildScrollView(
+              controller: _scrollController,
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: contentMaxWidth),

@@ -184,6 +184,13 @@ void main() {
     expect(find.text('Question 2 / 3'), findsOneWidget);
     expect(
       tester
+          .widget<SingleChildScrollView>(find.byType(SingleChildScrollView))
+          .controller!
+          .offset,
+      0,
+    );
+    expect(
+      tester
           .widget<FilterChip>(
             find.byKey(const ValueKey('toggle-moving-averages')),
           )
