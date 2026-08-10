@@ -85,6 +85,33 @@ def test_fetch_chart_data_calculates_moving_averages_for_display_dates():
     assert chart_data["ma70"][-1]["value"] == 254.5
 
 
+def test_fetch_chart_data_backfills_when_first_response_is_partial():
+    index = pd.bdate_range("2023-01-02", periods=220)
+    prices = pd.DataFrame(
+        {
+            "Open": range(220),
+            "High": range(1, 221),
+            "Low": range(220),
+            "Close": range(1, 221),
+            "Volume": range(1000, 1220),
+        },
+        index=index,
+    )
+    partial_prices = prices.tail(93)
+    older_prices = prices.loc[prices.index < partial_prices.index.min()]
+
+    with patch(
+        "backend.market_data.yf.download",
+        side_effect=[partial_prices, older_prices],
+    ) as download:
+        chart_data = fetch_chart_data("8306.T", index[-1].date().isoformat())
+
+    assert download.call_count == 2
+    assert download.call_args_list[1].kwargs["end"] == partial_prices.index.min().date()
+    assert len(chart_data["candles"]) == 120
+    assert len(chart_data["ma70"]) == 120
+
+
 def test_fetch_future_candles_excludes_base_date_and_rows_after_evaluation():
     index = pd.bdate_range("2024-05-01", "2024-08-05")
     prices = pd.DataFrame(

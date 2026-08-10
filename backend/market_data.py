@@ -10,6 +10,7 @@ import yfinance as yf
 DEFAULT_CANDLE_COUNT = 120
 _CALENDAR_LOOKBACK_DAYS = 320
 _MOVING_AVERAGE_WINDOWS = (20, 40, 70)
+_MAX_BACKFILL_REQUESTS = 3
 
 
 def fetch_candles(
@@ -65,6 +66,37 @@ def fetch_chart_data(
     prices.index = pd.to_datetime(prices.index).tz_localize(None).normalize()
     prices = prices.loc[prices.index <= cutoff]
     required_count = count + max(_MOVING_AVERAGE_WINDOWS) - 1
+    backfill_requests = 0
+    while len(prices) < required_count and backfill_requests < _MAX_BACKFILL_REQUESTS:
+        oldest_date = prices.index.min().date()
+        older_prices = yf.download(
+            normalized_ticker,
+            start=oldest_date - timedelta(days=_CALENDAR_LOOKBACK_DAYS),
+            end=oldest_date,
+            interval="1d",
+            auto_adjust=False,
+            progress=False,
+        )
+        if older_prices.empty:
+            break
+        if isinstance(older_prices.columns, pd.MultiIndex):
+            older_prices.columns = older_prices.columns.get_level_values(0)
+        if any(column not in older_prices for column in required_columns):
+            break
+
+        older_prices = older_prices.loc[:, required_columns].dropna().sort_index()
+        older_prices.index = (
+            pd.to_datetime(older_prices.index).tz_localize(None).normalize()
+        )
+        combined_prices = pd.concat([older_prices, prices])
+        combined_prices = combined_prices.loc[
+            ~combined_prices.index.duplicated(keep="last")
+        ].sort_index()
+        if len(combined_prices) == len(prices):
+            break
+        prices = combined_prices.loc[combined_prices.index <= cutoff]
+        backfill_requests += 1
+
     if len(prices) < required_count:
         raise ValueError(
             f"{normalized_ticker}の株価データが不足しています: "
