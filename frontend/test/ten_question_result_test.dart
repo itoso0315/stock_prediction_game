@@ -4,9 +4,20 @@ import 'package:stock_trainer_flutter/models/answer.dart';
 import 'package:stock_trainer_flutter/models/answer_record.dart';
 import 'package:stock_trainer_flutter/models/question.dart';
 import 'package:stock_trainer_flutter/screens/result_screen.dart';
-import 'package:stock_trainer_flutter/services/result_share_service.dart';
+import 'package:stock_trainer_flutter/widgets/result_share_card.dart';
 
 void main() {
+  test('正解数に応じて共有カードの称号を切り替える', () {
+    expect(resultAchievementFor(10).label, 'MARKET STRUCTURE');
+    expect(resultAchievementFor(10).message, '相場構造を捉えています');
+    expect(resultAchievementFor(7).label, 'PRICE ACTION');
+    expect(resultAchievementFor(7).message, '値動きの文脈が読めています');
+    expect(resultAchievementFor(4).label, 'TREND AWARE');
+    expect(resultAchievementFor(4).message, 'トレンドを認識できています');
+    expect(resultAchievementFor(0).label, 'CHART OBSERVER');
+    expect(resultAchievementFor(0).message, '観察眼を育成中です');
+  });
+
   testWidgets('10問すべて正解なら100%を表示する', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -19,6 +30,9 @@ void main() {
 
     expect(find.text('10問中 10問正解'), findsOneWidget);
     expect(find.text('正答率: 100%'), findsOneWidget);
+    expect(find.text('結果を共有しましょう'), findsOneWidget);
+    expect(find.text('MARKET STRUCTURE'), findsOneWidget);
+    expect(find.text('相場構造を捉えています'), findsOneWidget);
     expect(find.text('もう一度プレイ'), findsOneWidget);
   });
 
@@ -36,38 +50,20 @@ void main() {
     expect(find.text('正答率: 0%'), findsOneWidget);
   });
 
-  testWidgets('最終結果からX・Instagram・LINE・URL共有を実行できる', (tester) async {
-    final shareService = _FakeResultShareService();
+  testWidgets('最終結果に正方形カードと画像共有ボタンを表示する', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: ResultScreen(
           answerRecords: _records(selectedLabel: 'Chart A'),
           questions: _questions(),
-          shareService: shareService,
         ),
       ),
     );
 
-    for (final key in [
-      'share-x',
-      'share-instagram',
-      'share-line',
-      'share-url',
-    ]) {
-      final button = find.byKey(ValueKey(key));
-      expect(button, findsOneWidget);
-      await tester.ensureVisible(button);
-      await tester.tap(button);
-      await tester.pump();
-    }
-
-    expect(shareService.xText, contains('10問中10問正解'));
-    expect(shareService.xText, contains('正答率100%'));
-    expect(shareService.xText, contains(stockTrainerShareUrl));
-    expect(shareService.instagramText, shareService.xText);
-    expect(shareService.lineText, shareService.xText);
-    expect(shareService.didCopyUrl, isTrue);
-    expect(find.text('共有URLをコピーしました'), findsOneWidget);
+    expect(find.byKey(const ValueKey('result-share-card')), findsOneWidget);
+    final button = find.byKey(const ValueKey('share-result-image'));
+    expect(button, findsOneWidget);
+    expect(find.text('結果画像を共有'), findsOneWidget);
   });
 
   testWidgets('回答詳細から各問題の回答画面を再表示できる', (tester) async {
@@ -94,27 +90,6 @@ void main() {
 
     expect(find.text('10問中 10問正解'), findsOneWidget);
   });
-}
-
-class _FakeResultShareService implements ResultShareService {
-  String? xText;
-  String? instagramText;
-  String? lineText;
-  bool didCopyUrl = false;
-
-  @override
-  Future<void> shareToX(String text) async => xText = text;
-
-  @override
-  Future<void> shareToInstagram(String text, Rect? origin) async {
-    instagramText = text;
-  }
-
-  @override
-  Future<void> shareToLine(String text) async => lineText = text;
-
-  @override
-  Future<void> copyShareUrl() async => didCopyUrl = true;
 }
 
 List<Question> _questions() {

@@ -8,6 +8,7 @@ class Question {
   final String correctAnswerLabel;
   final String baseDate;
   final String evaluationDate;
+  final String explanation;
 
   const Question({
     required this.currentNumber,
@@ -17,6 +18,7 @@ class Question {
     required this.correctAnswerLabel,
     this.baseDate = '',
     this.evaluationDate = '',
+    this.explanation = '',
   });
 
   factory Question.fromJson(Map<String, dynamic> json) {
@@ -37,6 +39,7 @@ class Question {
       correctAnswerLabel: json['correctChoiceLabel'] as String,
       baseDate: json['baseDate'] as String? ?? '',
       evaluationDate: json['evaluationDate'] as String? ?? '',
+      explanation: json['explanation'] as String? ?? '',
     );
   }
 

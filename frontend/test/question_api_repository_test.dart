@@ -65,6 +65,7 @@ void main() {
   test('returns result question from result endpoint', () async {
     final client = MockClient((request) async {
       expect(request.url.path, '/api/results/1');
+      expect(request.url.queryParameters['selected_choice_label'], 'Chart A');
       return http.Response(
         '''{
           "currentNumber": 1,
@@ -75,7 +76,8 @@ void main() {
             {"label": "Chart A", "type": "stock", "resultCandles": []},
             {"label": "現金保有", "type": "cash", "returnRate": 0}
           ],
-          "correctChoiceLabel": "現金保有"
+          "correctChoiceLabel": "現金保有",
+          "explanation": "出来高と移動平均線を比較した解説です。"
         }''',
         200,
         headers: {'content-type': 'application/json; charset=utf-8'},
@@ -86,9 +88,13 @@ void main() {
       client: client,
     );
 
-    final question = await repository.getResultQuestion(1);
+    final question = await repository.getResultQuestion(
+      1,
+      selectedChoiceLabel: 'Chart A',
+    );
     expect(question.baseDate, '2024-05-01');
     expect(question.evaluationDate, '2024-06-03');
     expect(question.correctAnswerLabel, '現金保有');
+    expect(question.explanation, '出来高と移動平均線を比較した解説です。');
   });
 }

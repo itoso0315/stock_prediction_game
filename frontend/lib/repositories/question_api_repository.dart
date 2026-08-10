@@ -49,8 +49,13 @@ class QuestionApiRepository {
     }
   }
 
-  Future<Question> getResultQuestion(int questionNumber) async {
-    final uri = Uri.parse('$_baseUrl/api/results/$questionNumber');
+  Future<Question> getResultQuestion(
+    int questionNumber, {
+    required String selectedChoiceLabel,
+  }) async {
+    final uri = Uri.parse(
+      '$_baseUrl/api/results/$questionNumber',
+    ).replace(queryParameters: {'selected_choice_label': selectedChoiceLabel});
     final response = await _client.get(uri);
     if (response.statusCode != 200) {
       throw QuestionApiException(

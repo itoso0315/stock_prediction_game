@@ -1,9 +1,13 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../models/answer_record.dart';
 import '../models/question.dart';
 import '../repositories/game_stats_repository.dart';
 import '../services/result_share_service.dart';
+import '../widgets/result_share_card.dart';
 import 'answer_review_screen.dart';
 
 class ResultScreen extends StatefulWidget {
@@ -26,6 +30,7 @@ class ResultScreen extends StatefulWidget {
 
 class _ResultScreenState extends State<ResultScreen> {
   late final Future<void> _recordResultFuture;
+  final _shareCardKey = GlobalKey();
 
   List<AnswerRecord> get answerRecords => widget.answerRecords;
   List<Question> get questions => widget.questions;
@@ -76,6 +81,28 @@ class _ResultScreenState extends State<ResultScreen> {
     final renderObject = context.findRenderObject();
     if (renderObject is! RenderBox) return null;
     return renderObject.localToGlobal(Offset.zero) & renderObject.size;
+  }
+
+  Future<void> _shareResultCard(BuildContext context, String text) async {
+    final shareOrigin = _shareOrigin(context);
+    final boundary = _shareCardKey.currentContext?.findRenderObject();
+    if (boundary is! RenderRepaintBoundary) {
+      throw StateError('共有画像を生成できませんでした。');
+    }
+    final image = await boundary.toImage(pixelRatio: 3);
+    try {
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        throw StateError('共有画像を生成できませんでした。');
+      }
+      await shareService.shareResultImage(
+        byteData.buffer.asUint8List(),
+        text,
+        shareOrigin,
+      );
+    } finally {
+      image.dispose();
+    }
   }
 
   Future<void> _performShare(
@@ -158,7 +185,11 @@ class _ResultScreenState extends State<ResultScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Result'), centerTitle: true),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('Result'),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -247,63 +278,42 @@ class _ResultScreenState extends State<ResultScreen> {
                         ..._buildAnswerResultItems(context),
                         const SizedBox(height: 24),
                         Text(
-                          '結果を共有',
+                          '結果を共有しましょう',
                           style: Theme.of(context).textTheme.titleMedium,
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 12),
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            OutlinedButton.icon(
-                              key: const ValueKey('share-x'),
-                              onPressed: () => _performShare(
-                                context,
-                                () => shareService.shareToX(shareText),
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 520),
+                            child: RepaintBoundary(
+                              key: _shareCardKey,
+                              child: ResultShareCard(
+                                correctCount: correctCount,
+                                totalQuestions: answerRecords.length,
                               ),
-                              icon: const Icon(Icons.close, size: 18),
-                              label: const Text('X'),
                             ),
-                            OutlinedButton.icon(
-                              key: const ValueKey('share-instagram'),
-                              onPressed: () => _performShare(
-                                context,
-                                () => shareService.shareToInstagram(
-                                  shareText,
-                                  _shareOrigin(context),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: buttonMaxWidth,
+                            ),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                key: const ValueKey('share-result-image'),
+                                onPressed: () => _performShare(
+                                  context,
+                                  () => _shareResultCard(context, shareText),
                                 ),
+                                icon: const Icon(Icons.ios_share),
+                                label: const Text('結果画像を共有'),
                               ),
-                              icon: const Icon(
-                                Icons.camera_alt_outlined,
-                                size: 18,
-                              ),
-                              label: const Text('Instagram'),
                             ),
-                            OutlinedButton.icon(
-                              key: const ValueKey('share-line'),
-                              onPressed: () => _performShare(
-                                context,
-                                () => shareService.shareToLine(shareText),
-                              ),
-                              icon: const Icon(
-                                Icons.chat_bubble_outline,
-                                size: 18,
-                              ),
-                              label: const Text('LINE'),
-                            ),
-                            OutlinedButton.icon(
-                              key: const ValueKey('share-url'),
-                              onPressed: () => _performShare(
-                                context,
-                                shareService.copyShareUrl,
-                                successMessage: '共有URLをコピーしました',
-                              ),
-                              icon: const Icon(Icons.link, size: 18),
-                              label: const Text('URL共有'),
-                            ),
-                          ],
+                          ),
                         ),
                         const SizedBox(height: 24),
                         Center(

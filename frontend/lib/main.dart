@@ -75,12 +75,12 @@ class StockTrainerApp extends StatelessWidget {
         ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: _LeftToRightPageTransitionsBuilder(),
-            TargetPlatform.iOS: _LeftToRightPageTransitionsBuilder(),
-            TargetPlatform.macOS: _LeftToRightPageTransitionsBuilder(),
-            TargetPlatform.windows: _LeftToRightPageTransitionsBuilder(),
-            TargetPlatform.linux: _LeftToRightPageTransitionsBuilder(),
-            TargetPlatform.fuchsia: _LeftToRightPageTransitionsBuilder(),
+            TargetPlatform.android: _ForwardPageTransitionsBuilder(),
+            TargetPlatform.iOS: _ForwardPageTransitionsBuilder(),
+            TargetPlatform.macOS: _ForwardPageTransitionsBuilder(),
+            TargetPlatform.windows: _ForwardPageTransitionsBuilder(),
+            TargetPlatform.linux: _ForwardPageTransitionsBuilder(),
+            TargetPlatform.fuchsia: _ForwardPageTransitionsBuilder(),
           },
         ),
         useMaterial3: true,
@@ -93,8 +93,8 @@ class StockTrainerApp extends StatelessWidget {
   }
 }
 
-class _LeftToRightPageTransitionsBuilder extends PageTransitionsBuilder {
-  const _LeftToRightPageTransitionsBuilder();
+class _ForwardPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _ForwardPageTransitionsBuilder();
 
   @override
   Widget buildTransitions<T>(
@@ -109,11 +109,8 @@ class _LeftToRightPageTransitionsBuilder extends PageTransitionsBuilder {
       child: child,
       builder: (context, child) {
         final progress = Curves.easeInOut.transform(animation.value);
-        final horizontalOffset = animation.status == AnimationStatus.reverse
-            ? 1 - progress
-            : progress - 1;
         return FractionalTranslation(
-          translation: Offset(horizontalOffset, 0),
+          translation: Offset(1 - progress, 0),
           child: child,
         );
       },

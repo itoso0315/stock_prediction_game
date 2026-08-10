@@ -7,6 +7,7 @@ import '../models/question.dart';
 import '../repositories/question_api_repository.dart';
 import '../repositories/game_stats_repository.dart';
 import '../widgets/chart_card.dart';
+import '../widgets/top_back_button.dart';
 import 'answer_review_screen.dart';
 import 'result_screen.dart';
 
@@ -124,6 +125,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
           QuestionApiRepository(baseUrl: AppConfig.apiBaseUrl);
       final resultQuestion = await repository.getResultQuestion(
         question.currentNumber,
+        selectedChoiceLabel: selectedAnswerLabel,
       );
       if (!mounted) return;
       questions[_currentIndex] = resultQuestion;
@@ -195,16 +197,18 @@ class _QuestionScreenState extends State<QuestionScreen> {
       return;
     }
 
-    Navigator.of(context).pop();
-    setState(() {
-      _currentIndex++;
-      _selectedAnswerLabel = null;
-      _isSubmitting = false;
-      _errorMessage = null;
-    });
-    if (_scrollController.hasClients) {
-      _scrollController.jumpTo(0);
-    }
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => QuestionScreen(
+          initialIndex: _currentIndex + 1,
+          initialAnswerRecords: _answerRecords,
+          initialQuestions: questions,
+          initialShowMovingAverages: _showMovingAverages,
+          questionRepository: widget.questionRepository,
+          gameStatsRepository: widget.gameStatsRepository,
+        ),
+      ),
+    );
   }
 
   @override
@@ -224,6 +228,8 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 112,
+        leading: const TopBackButton(),
         title: Text('Question ${_currentIndex + 1} / ${questions.length}'),
         centerTitle: true,
       ),

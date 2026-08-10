@@ -5,6 +5,7 @@ import '../models/answer_record.dart';
 import '../models/question.dart';
 import '../models/answer.dart';
 import '../widgets/candlestick_chart.dart';
+import '../widgets/top_back_button.dart';
 
 class AnswerReviewScreen extends StatelessWidget {
   const AnswerReviewScreen({
@@ -70,7 +71,12 @@ class AnswerReviewScreen extends StatelessWidget {
         : '次の問題へ';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('結果発表'), centerTitle: true),
+      appBar: AppBar(
+        leadingWidth: 112,
+        leading: const TopBackButton(),
+        title: const Text('結果発表'),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -165,6 +171,45 @@ class AnswerReviewScreen extends StatelessWidget {
                                 : () => _openYahooFinance(context, answer),
                           ),
                           const SizedBox(height: 12),
+                        ],
+                        if (question.explanation.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Card(
+                            key: const ValueKey('ai-commentary'),
+                            child: Padding(
+                              padding: const EdgeInsets.all(18),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.auto_awesome,
+                                        size: 18,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'AIひとこと解説',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    question.explanation,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyLarge,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                         const SizedBox(height: 16),
                         Text(

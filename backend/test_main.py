@@ -119,7 +119,7 @@ def test_result_uses_future_data_and_selects_best_choice():
     with patch.dict(_chart_orders, {1: (0, 1, 2)}, clear=True), patch(
         "backend.main.fetch_chart_data", return_value=past
     ), patch("backend.main.fetch_future_candles", side_effect=future):
-        result = get_result(1)
+        result = get_result(1, selected_choice_label="Chart B")
 
     stocks = [choice for choice in result["choices"] if choice["type"] == "stock"]
     assert all(len(choice["resultCandles"]) == 2 for choice in stocks)
@@ -129,6 +129,7 @@ def test_result_uses_future_data_and_selects_best_choice():
     assert result["choices"][-1]["returnRate"] == 0.0
     assert stocks[0]["yahooFinanceUrl"].endswith("/3099.T/chart")
     assert "problemType" not in result
+    assert result["explanation"]
 
 
 def test_cash_question_selects_cash_when_all_stocks_decline():

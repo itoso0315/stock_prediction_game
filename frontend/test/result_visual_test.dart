@@ -34,6 +34,8 @@ void main() {
     expect(find.text('○ 正解'), findsNothing);
     expect(find.text('× 不正解'), findsNothing);
     expect(find.text('あなたの回答'), findsNothing);
+    expect(find.text('AIひとこと解説'), findsOneWidget);
+    expect(find.text('移動平均線と出来高を比較した解説です。'), findsOneWidget);
     expect(find.text('正答'), findsNothing);
     expect(find.text('あなたの選択'), findsOneWidget);
     final chart = tester.widget<CandlestickChart>(
@@ -112,4 +114,5 @@ const _question = Question(
     Answer(label: '現金保有', type: AnswerType.cash, returnRate: 0),
   ],
   correctAnswerLabel: 'Chart A',
+  explanation: '移動平均線と出来高を比較した解説です。',
 );

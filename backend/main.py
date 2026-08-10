@@ -10,8 +10,10 @@ from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 try:
+    from .explanation import generate_technical_comment
     from .market_data import fetch_chart_data, fetch_future_candles
 except ImportError:  # ``cd backend && uvicorn main:app`` での起動に対応する。
+    from explanation import generate_technical_comment
     from market_data import fetch_chart_data, fetch_future_candles
 
 app = FastAPI(title="Stock Trainer API")
@@ -153,7 +155,7 @@ def get_questions():
 
 
 @app.get("/api/results/{question_number}")
-def get_result(question_number: int):
+def get_result(question_number: int, selected_choice_label: str | None = None):
     with SAMPLE_QUESTIONS_PATH.open("r", encoding="utf-8") as file:
         payload = json.load(file)
 
@@ -218,6 +220,11 @@ def get_result(question_number: int):
         question["correctChoiceLabel"] = max(
             question["choices"], key=lambda choice: choice["returnRate"]
         )["label"]
+        question["explanation"] = generate_technical_comment(
+            question["choices"],
+            question["correctChoiceLabel"],
+            selected_choice_label,
+        )
         return question
     except (KeyError, StopIteration, TypeError, ValueError) as error:
         raise HTTPException(

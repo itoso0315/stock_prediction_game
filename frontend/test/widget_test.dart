@@ -98,6 +98,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Question 1 / 3'), findsOneWidget);
+    expect(find.text('Topに戻る'), findsOneWidget);
     expect(
       find.text('過去約半年のチャートを見て、評価日までに最も騰落率が高い選択肢を選んでください。'),
       findsOneWidget,
@@ -163,6 +164,7 @@ void main() {
 
     expect(find.text('結果発表'), findsWidgets);
     expect(find.text('問題 1 / 3'), findsOneWidget);
+    expect(find.text('Topに戻る'), findsOneWidget);
     expect(find.text('現在の成績'), findsOneWidget);
     expect(find.text('現在の正答率'), findsOneWidget);
     expect(find.text('目標'), findsOneWidget);
@@ -170,6 +172,7 @@ void main() {
     expect(find.text('あなたの回答'), findsNothing);
     expect(find.text('正解'), findsWidgets);
     expect(find.text('正答率70%を目指しましょう'), findsOneWidget);
+    expect(find.text('AIひとこと解説'), findsOneWidget);
     expect(find.text('次の問題へ'), findsOneWidget);
     expect(find.text('× 不正解'), findsNothing);
     expect(find.byType(CandlestickChart), findsNWidgets(3));
@@ -337,6 +340,7 @@ http.Response _resultResponse(int questionNumber) {
       'evaluationDate': evaluationDate,
       'choices': choices,
       'correctChoiceLabel': correctLabels[questionNumber - 1],
+      'explanation': '移動平均線、値動き、出来高を比較した解説です。',
     }),
     200,
     headers: {'content-type': 'application/json; charset=utf-8'},
