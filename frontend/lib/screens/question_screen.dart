@@ -77,7 +77,10 @@ class _QuestionScreenState extends State<QuestionScreen> {
         _questions = questions;
         _isLoading = false;
       });
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('Question loading failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      
       if (!mounted) {
         return;
       }
@@ -129,7 +132,10 @@ class _QuestionScreenState extends State<QuestionScreen> {
       );
       if (!mounted) return;
       questions[_currentIndex] = resultQuestion;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('Result question loading failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+
       if (!mounted) return;
       setState(() {
         _isSubmitting = false;

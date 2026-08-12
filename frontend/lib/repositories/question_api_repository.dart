@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:http/http.dart' as http;
 
@@ -14,12 +15,40 @@ class QuestionApiRepository {
 
   Future<List<Question>> getQuestions() async {
     final uri = Uri.parse('$_baseUrl/api/questions');
-    final response = await _client.get(uri);
+    const retryDelays = <Duration>[
+      Duration(seconds: 5),
+      Duration(seconds: 10),
+      Duration(seconds: 15),
+    ];
 
-    if (response.statusCode != 200) {
-      throw QuestionApiException(
-        'Failed to load questions: HTTP ${response.statusCode}',
-      );
+    http.Response? response;
+
+    for (var attempt = 0; attempt <= retryDelays.length; attempt++) {
+      try {
+        response = await _client.get(uri);
+
+        if (response.statusCode == 200) {
+          break;
+        }
+
+        if (response.statusCode != 502 || attempt == retryDelays.length) {
+          throw QuestionApiException(
+            'Failed to load questions: HTTP ${response.statusCode}',
+          );
+        }
+      } on QuestionApiException {
+        rethrow;
+      } catch (error) {
+        if (attempt == retryDelays.length) {
+          throw QuestionApiException('Failed to load questions: $error');
+        }
+      }
+
+      await Future.delayed(retryDelays[attempt]);
+    }
+
+    if (response == null || response.statusCode != 200) {
+      throw const QuestionApiException('Failed to load questions.');
     }
 
     try {
