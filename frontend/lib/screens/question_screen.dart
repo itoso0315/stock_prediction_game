@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../config/app_config.dart';
@@ -44,6 +45,15 @@ class _QuestionScreenState extends State<QuestionScreen> {
   late bool _showMovingAverages;
   var _isSubmitting = false;
 
+  static const _loadingMessages = <String>[
+    '問題を準備しています…',
+    'チャートデータを読み込んでいます…',
+    'もう少しだけお待ちください…',
+  ];
+
+  Timer? _loadingMessageTimer;
+  var _loadingMessageIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -58,8 +68,28 @@ class _QuestionScreenState extends State<QuestionScreen> {
       _isLoading = false;
       return;
     }
-
+    _startLoadingMessageRotation();
     _loadQuestions();
+  }
+
+  void _startLoadingMessageRotation() {
+    _loadingMessageTimer?.cancel();
+
+    _loadingMessageTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted || !_isLoading) {
+        return;
+      }
+
+      setState(() {
+        _loadingMessageIndex =
+            (_loadingMessageIndex + 1) % _loadingMessages.length;
+      });
+    });
+  }
+
+  void _stopLoadingMessageRotation() {
+    _loadingMessageTimer?.cancel();
+    _loadingMessageTimer = null;
   }
 
   Future<void> _loadQuestions() async {
@@ -68,6 +98,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
           widget.questionRepository ??
           QuestionApiRepository(baseUrl: AppConfig.apiBaseUrl);
       final questions = await repository.getQuestions();
+      _stopLoadingMessageRotation();
 
       if (!mounted) {
         return;
@@ -80,7 +111,8 @@ class _QuestionScreenState extends State<QuestionScreen> {
     } catch (error, stackTrace) {
       debugPrint('Question loading failed: $error');
       debugPrintStack(stackTrace: stackTrace);
-      
+      _stopLoadingMessageRotation();
+
       if (!mounted) {
         return;
       }
@@ -94,6 +126,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
   @override
   void dispose() {
+    _stopLoadingMessageRotation();
     _scrollController.dispose();
     super.dispose();
   }
@@ -221,7 +254,31 @@ class _QuestionScreenState extends State<QuestionScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 24),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: Text(
+                      _loadingMessages[_loadingMessageIndex],
+                      key: ValueKey(_loadingMessageIndex),
+                      style: Theme.of(context).textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
     }
 
     final errorMessage = _errorMessage;
