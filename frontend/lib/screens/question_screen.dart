@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 import '../models/answer_record.dart';
@@ -109,8 +110,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
         _isLoading = false;
       });
     } catch (error, stackTrace) {
-      debugPrint('Question loading failed: $error');
-      debugPrintStack(stackTrace: stackTrace);
+      _logQuestionLoadingError(error, stackTrace);
       _stopLoadingMessageRotation();
 
       if (!mounted) {
@@ -122,6 +122,44 @@ class _QuestionScreenState extends State<QuestionScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  void _retryLoadQuestions() {
+    if (_isLoading) {
+      return;
+    }
+
+    _stopLoadingMessageRotation();
+    setState(() {
+      _errorMessage = null;
+      _isLoading = true;
+      _loadingMessageIndex = 0;
+    });
+    _startLoadingMessageRotation();
+    unawaited(_loadQuestions());
+  }
+
+  void _logQuestionLoadingError(Object error, StackTrace stackTrace) {
+    final message = error.toString();
+    final httpStatusMatch = RegExp(r'HTTP\s+(\d{3})').firstMatch(message);
+
+    if (httpStatusMatch != null) {
+      debugPrint(
+        'Question loading failed [HTTP status: ${httpStatusMatch.group(1)}]: '
+        '$error',
+      );
+    } else if (error is TimeoutException ||
+        message.toLowerCase().contains('timeout')) {
+      debugPrint('Question loading failed [timeout]: $error');
+    } else if (error is http.ClientException ||
+        message.contains('ClientException') ||
+        message.contains('SocketException')) {
+      debugPrint('Question loading failed [network exception]: $error');
+    } else {
+      debugPrint('Question loading failed [unexpected exception]: $error');
+    }
+
+    debugPrintStack(stackTrace: stackTrace);
   }
 
   @override
@@ -284,7 +322,28 @@ class _QuestionScreenState extends State<QuestionScreen> {
     final errorMessage = _errorMessage;
 
     if (errorMessage != null) {
-      return Scaffold(body: Center(child: Text(errorMessage)));
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(errorMessage),
+                if (errorMessage == '問題データを読み込めませんでした') ...[
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.green,
+                    ),
+                    onPressed: _isLoading ? null : _retryLoadQuestions,
+                    child: const Text('もう一度試す'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     final questions = _questions!;
